@@ -237,27 +237,22 @@ class music(commands.Cog):
         if not voice:
             await ctx.invoke(self.client.get_command('join'))
 
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if voice:
             songs.append(url)
 
             if not voice.is_playing():
-                await ctx.invoke(self.client.get_command('real_play'))
+                if songs:
+                    async with ctx.typing():
+                        player = await YTDLSource.from_url(songs[0], loop=client.loop)
+                        ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+
+                    await ctx.send('**Now playing:** {}'.format(player.title)) 
+                    del (songs[0])
+                else:
+                    await ctx.send('Nothing to play.')
             else:
-                await ctx.send(f'`{url}` added to queue!')
-
-    @commands.command(hidden=True)
-    async def real_play(self, ctx):
-        global songs
-
-        if songs:
-            async with ctx.typing():
-                player = await YTDLSource.from_url(songs[0], loop=client.loop)
-                ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-
-            await ctx.send('**Now playing:** {}'.format(player.title)) 
-            del (songs[0])
-        else:
-            await ctx.send('Nothing to play.')   
+                await ctx.send(f'`{url}` added to queue!') 
 
     def setup(client):
         client.add_cog(music(client))

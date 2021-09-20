@@ -1,4 +1,7 @@
+import os
+
 import asyncio
+import functools
 
 import discord
 from discord.ext import commands, tasks
@@ -27,6 +30,9 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
+class YTDLError(Exception):
+    pass
+
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
@@ -48,6 +54,47 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url']
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
+    @classmethod
+    async def create_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
+        loop = loop or asyncio.get_event_loop()
+
+        partial = functools.partial(ytdl.extract_info, search, download=False, process=False)
+        data = await loop.run_in_executor(None, partial)
+
+        if data is None:
+            raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+
+        if 'entries' not in data:
+            process_info = data
+        else:
+            process_info = None
+            for entry in data['entries']:
+                if entry:
+                    process_info = entry
+                    break
+
+            if process_info is None:
+                raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+
+        webpage_url = process_info['webpage_url']
+        partial = functools.partial(ytdl.extract_info, webpage_url, download=False)
+        processed_info = await loop.run_in_executor(None, partial)
+
+        if processed_info is None:
+            raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
+
+        if 'entries' not in processed_info:
+            info = processed_info
+        else:
+            info = None
+            while info is None:
+                try:
+                    info = processed_info['entries'].pop(0)
+                except IndexError:
+                    raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
+
+        return cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info)
+
 class admin(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -57,8 +104,9 @@ class admin(commands.Cog):
     @commands.command(hidden=True)
     @commands.is_owner()
     async def shutdown(self, ctx):
-        await ctx.send('💤')
+        await ctx.message.add_reaction('💤')
         await client.close()
+        #cleanup()
 
     @commands.command(hidden=True)
     async def load(self, ctx, *, module):
@@ -139,24 +187,7 @@ class music(commands.Cog):
         else:
             await ctx.voice_client.disconnect()
             songs = []
-
-    '''
-    @commands.command()
-    async def play(self, ctx, url):
-        global songs
-
-        songs.append(url)
-
-        ffmpeg_options = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-        ydl_options = {'format': "bestaudio"}
-        vc = ctx.voice_client
-
-        with youtube_dl.YoutubeDL(ydl_options) as ydl:
-            info = ydl.extract_info(url, download=False)
-            url2 = info['formats'][0]['url']
-            source = await discord.FFmpegOpusAudio.from_probe(url2, **ffmpeg_options)
-            vc.play(source)
-    '''
+            #cleanup()
 
     @commands.command(help='This command skips the current song')
     async def skip(self, ctx):
@@ -176,7 +207,7 @@ class music(commands.Cog):
             ctx.voice_client.stop()
             await ctx.send('Skipped.')
             if songs:
-                await ctx.invoke(self.client.get_command('real_play'))
+                await ctx.invoke(self.client.get_command('play'), url='')
 
     @commands.command(help='This command pauses the song')
     async def pause(self, ctx):
@@ -192,7 +223,7 @@ class music(commands.Cog):
             return
         else:
             voice.pause()
-            await ctx.send('⏸️')
+            await ctx.message.add_reaction('⏸️')
 
     @commands.command(help='This command resumes the song')
     async def resume(self, ctx):
@@ -208,7 +239,7 @@ class music(commands.Cog):
             return
         else:
             voice.resume()
-            await ctx.send('▶️')
+            await ctx.message.add_reaction('▶️')
 
     @commands.command(help='This command stops the current song and empties the queue')
     async def stop(self,ctx):
@@ -226,11 +257,11 @@ class music(commands.Cog):
             return
         else:
             voice.stop()
-            await ctx.send('⏹️')
+            await ctx.message.add_reaction('⏹️')
             songs = []             
 
     @commands.command(help='This command plays songs or adds them to the current queue')
-    async def play(self, ctx, url):
+    async def play(self, ctx: commands.Context, *, url):
         global songs
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
@@ -239,15 +270,24 @@ class music(commands.Cog):
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if voice:
-            songs.append(url)
+            if url != '':
+                songs.append(url)
 
             if not voice.is_playing():
                 if songs:
+                    '''
                     async with ctx.typing():
                         player = await YTDLSource.from_url(songs[0], loop=client.loop)
                         ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+                    '''
 
-                    await ctx.send('**Now playing:** {}'.format(player.title)) 
+                    try:
+                        source = await YTDLSource.create_source(ctx, songs[0], loop=self.client.loop)
+                        ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
+                        await ctx.send('**Now playing:** {}'.format(source.title)) 
+                    except YTDLError as e:
+                        await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
+                    
                     del (songs[0])
                 else:
                     await ctx.send('Nothing to play.')
@@ -272,5 +312,12 @@ async def change_status():
 async def on_ready():
     await change_status()
     print('Bot is online.')
+
+def cleanup():
+        cache_path = ''
+        file_list = os.listdir(cache_path)
+        for file in file_list:
+            if file.endswith('.webm'):
+                os.remove(os.path.join(cache_path, file))
 
 client.run("")

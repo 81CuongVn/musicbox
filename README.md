@@ -11,10 +11,9 @@
 
 ### Key Features:
 * Ability to output streamed or downloaded songs via youtube search
-* Plays, queues, pauses, resumes, stops and skips songs
+* Plays, queues, repeats, pauses, resumes, stops and skips songs
 
 ### Future Milestones:
 * remove songs from queue
-* loop songs
 * viewable queue
 * internal cleanups

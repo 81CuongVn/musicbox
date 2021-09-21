@@ -6,6 +6,7 @@
 * Discord, both app and developer bot
 
 ### Usage:
+* In main.py: Enter the token of your bot in "bot_token"
 * Local Host: Open your terminal, navigate to the file location and type "py main.py"
 * Heroku Cloud Host: add python, ffmpeg and opus buildpacks, then deploy it
 * Overview of available commands via !help

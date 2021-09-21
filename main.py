@@ -167,7 +167,7 @@ class music(commands.Cog):
     @commands.command(help='This command makes the bot join the voice channel')
     async def join(self, ctx):
         if ctx.author.voice is None:
-            await ctx.send("Ur not in a voice channel.")
+            await ctx.send("Ur not in a voice channel lmao.")
         else:
             voice_channel = ctx.author.voice.channel
             if ctx.voice_client is None:
@@ -182,7 +182,7 @@ class music(commands.Cog):
         
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not voice:
-            await ctx.send('? Not in a voice channel right now.')
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
             return
         elif ctx.voice_client.channel != ctx.author.voice.channel:
             await ctx.send('Ur not in that voice channel. 🌚')
@@ -192,6 +192,7 @@ class music(commands.Cog):
             await ctx.message.add_reaction('👋')
             songs = []
             repeating = False
+            current_song = ''
             #cleanup()
 
     @commands.command(help='This command skips the current song')
@@ -200,7 +201,7 @@ class music(commands.Cog):
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not voice:
-            await ctx.send('? Not in a voice channel right now.')
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to skip.')
@@ -218,7 +219,7 @@ class music(commands.Cog):
     async def pause(self, ctx):
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not voice:
-            await ctx.send('? Not in a voice channel right now.')
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to pause.')
@@ -234,7 +235,7 @@ class music(commands.Cog):
     async def resume(self, ctx):
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not voice:
-            await ctx.send('? Not in a voice channel right now.')
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
             return
         elif not voice.is_paused():
             await ctx.send('Nothing is paused.')
@@ -252,7 +253,7 @@ class music(commands.Cog):
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not voice:
-            await ctx.send('? Not in a voice channel right now.')
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to repeat.')
@@ -267,7 +268,7 @@ class music(commands.Cog):
                 songs.insert(0, current_song)
             else:
                 await ctx.message.add_reaction('➡️')
-                del (songs[0])
+                del(songs[0])
 
     @commands.command(help='This command stops the current song and empties the queue')
     async def stop(self,ctx):
@@ -275,7 +276,7 @@ class music(commands.Cog):
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not voice:
-            await ctx.send('? Not in a voice channel right now.')
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to stop.')
@@ -286,10 +287,50 @@ class music(commands.Cog):
         else:
             voice.stop()
             await ctx.message.add_reaction('⏹️')
-            songs = []             
+
+            songs = []
+            repeating = False
+            current_song = ''
+
+    @commands.command(help='This command removes a specific song from the current queue')
+    async def _remove(self, ctx, index: int):
+        global songs
+
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+        if not voice:
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
+            return
+        elif not songs:
+            await ctx.send('Queue is empty.')
+            return
+        elif ctx.voice_client.channel != ctx.author.voice.channel:
+            await ctx.send('Ur not in that voice channel. 🌚')
+            return
+        else:
+            tmp = songs[index - 1]
+            del(songs[index - 1])
+            await ctx.send(f'`{tmp}` removed from queue.')
+
+    @commands.command(help='This command displays the current queue')
+    async def queue(self, ctx):
+        global songs
+
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+        if not voice:
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
+            return
+        elif not songs:
+            await ctx.send('Queue is empty.')
+            return
+        elif ctx.voice_client.channel != ctx.author.voice.channel:
+            await ctx.send('Ur not in that voice channel. 🌚')
+            return
+        else:
+            await ctx.send(f'The current queue is: `{songs}!`')
+             
 
     @commands.command(help='This command plays songs or adds them to the current queue')
-    async def play(self, ctx: commands.Context, *, url):
+    async def play(self, ctx, *, url):
         global songs, current_song, repeating
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)

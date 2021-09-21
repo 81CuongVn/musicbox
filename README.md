@@ -8,6 +8,7 @@
 ### Usage:
 * Local Host: Open your terminal, navigate to the file location and type "py main.py"
 * Heroku Cloud Host: add python, ffmpeg and opus buildpacks, then deploy it
+* Overview of available commands via !help
 
 ### Key Features:
 * Ability to output streamed or downloaded songs via youtube search
@@ -16,3 +17,4 @@
 
 ### Future Milestones:
 * internal cleanups
+* make cogs loadable

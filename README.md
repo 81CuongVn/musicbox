@@ -17,5 +17,7 @@
 * View songs in queue and remove specific songs
 
 ### Future Milestones:
+* make bot exception proof (e.g. limits for long videos)
+* support for multiple discord servers?
 * internal cleanups
 * make cogs loadable

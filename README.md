@@ -6,14 +6,13 @@
 * Discord, both app and developer bot
 
 ### Usage:
-* Open your terminal, navigate to the file location and type "py main.py"
-* Currently only locally hostable, cloud hosting via heroku for 24/7 bot activity planned in the future
+* Local Host: Open your terminal, navigate to the file location and type "py main.py"
+* Heroku Cloud Host: add python, ffmpeg and opus buildpacks, then deploy it
 
 ### Key Features:
 * Ability to output streamed or downloaded songs via youtube search
-* Plays, queues, repeats, pauses, resumes, stops and skips songs
+* Play, queue, repeat, pause, resume, stop and skip songs
+* View songs in queue and remove specific songs
 
 ### Future Milestones:
-* remove songs from queue
-* viewable queue
 * internal cleanups

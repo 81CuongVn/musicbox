@@ -7,6 +7,8 @@ import discord
 from discord.ext import commands, tasks
 import youtube_dl
 
+bot_token = ''
+
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
@@ -393,4 +395,4 @@ def cleanup():
             if file.endswith('.webm'):
                 os.remove(os.path.join(cache_path, file))
 
-client.run("")
+client.run(bot_token)

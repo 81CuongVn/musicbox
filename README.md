@@ -1,15 +1,27 @@
 # Simple Discord Music Bot
 
-## Requirements:
+## Local Host:
+### Requirements:
 * Python 3.7+
 * FFMPEG executable in PATH
 * Discord, both app and developer bot
 
-## Usage:
-* In main.py: Enter the token of your bot in "bot_token"
-* Local Host: Open your terminal, navigate to the file location and type "py main.py"
-* Heroku Cloud Host: add python, ffmpeg and opus buildpacks, then deploy it
+### Usage:
+* In main.py: Enter the token of your bot in "bot_token" (Do NOT share your token!!)
+* Open your terminal, navigate to the file location and type "py main.py"
 * Overview of available commands via !help
+  
+## Cloud Host (Heroku):
+### Requirements:
+* Python, FFMPEG and Opus Buildpacks
+* Discord, both app and developer bot
+  
+### Usage:
+* In main.py: Enter the token of your bot in "bot_token" (Do NOT share your token!!)
+* Push it to the (!private!) Git-Repository
+* Connect the Git-Repository to Heroku under Deploy on the Heroku Dashboard
+* Deploy it under Deploy (Automatic or Manual)
+* Turn on your Dyno Worker under Resources
 
 ## Key Features:
 * Ability to output streamed or downloaded songs via youtube search

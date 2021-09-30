@@ -9,7 +9,7 @@
 ### Usage:
 * In main.py: Enter the token of your bot in "bot_token" (Do NOT share your token!!)
 * Open your terminal, navigate to the file location and type "py main.py"
-* Overview of available commands via !help
+* Add your bot to your server with the link provided in the Discord Developer Portal
   
 ## Cloud Host (Heroku):
 ### Requirements:
@@ -22,6 +22,7 @@
 * Connect the Git-Repository to Heroku under Deploy on the Heroku Dashboard
 * Deploy it under Deploy (Automatic or Manual)
 * Turn on your Dyno Worker under Resources
+* Add your bot to your server with the link provided in the Discord Developer Portal
 
 ## Key Features:
 * Ability to output streamed or downloaded songs via youtube search
@@ -29,7 +30,7 @@
 * View songs in queue and remove specific songs
 
 ## Future Milestones:
-* make bot exception proof (e.g. limits for long videos)
+* make bot exception/spam/abuse proof (e.g. limits for long videos)
 * support for multiple discord servers?
 * internal cleanups
 * make cogs loadable

@@ -4,6 +4,7 @@ import asyncio
 import functools
 
 import discord
+from discord import embeds
 from discord.ext import commands, tasks
 import youtube_dl
 
@@ -44,7 +45,12 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.data = data
 
         self.title = data.get('title')
-        self.url = data.get('url')
+        self.url = data.get('webpage_url')
+        self.duration = self.parse_duration(int(data.get('duration')))
+        self.uploader = data.get('uploader')
+        self.uploader_url = data.get('uploader_url')
+        self.thumbnail = data.get('thumbnail')
+
 
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):
@@ -98,6 +104,24 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
 
         return cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info)
+    
+    @staticmethod
+    def parse_duration(duration: int):
+        minutes, seconds = divmod(duration, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+
+        duration = []
+        if days > 0:
+            duration.append('{} days'.format(days))
+        if hours > 0:
+            duration.append('{} hours'.format(hours))
+        if minutes > 0:
+            duration.append('{} minutes'.format(minutes))
+        if seconds > 0:
+            duration.append('{} seconds'.format(seconds))
+
+        return ', '.join(duration)
 
 class admin(commands.Cog):
     def __init__(self, client):
@@ -108,7 +132,6 @@ class admin(commands.Cog):
     async def shutdown(self, ctx):
         await ctx.message.add_reaction('💤')
         await client.close()
-        #cleanup()
 
     def setup(client):
         client.add_cog(admin(client))
@@ -136,6 +159,8 @@ class music(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    #TODO: shuffle playlist, spotify support (if possible?)
+    
     @commands.command(help='This command makes the bot join the voice channel')
     async def join(self, ctx):
         if ctx.author.voice is None:
@@ -162,7 +187,6 @@ class music(commands.Cog):
             songs = []
             repeating = False
             current_song = None
-            #cleanup()
 
     @commands.command(help='This command skips the current song')
     async def skip(self, ctx):
@@ -177,9 +201,9 @@ class music(commands.Cog):
         else:
             ctx.voice_client.stop()
             if(repeating):
-                await ctx.send('Skipped, but still in repeat mode!')
+                await ctx.send('🎧 **Skipped. Still in repeat mode tho!**')
             else:
-                await ctx.send('Skipped.')
+                await ctx.send('🎧 **Skipped.**')
 
     @commands.command(help='This command pauses the song')
     async def pause(self, ctx):
@@ -238,7 +262,7 @@ class music(commands.Cog):
             repeating = False
             
             voice.stop()
-            await ctx.message.add_reaction('⏹️')
+            await ctx.send('🎧 **Stopped and queue cleared.**')
 
     @commands.command(name='remove', help='This command removes a specific song from the current queue')
     async def _remove(self, ctx, index: int):
@@ -248,12 +272,15 @@ class music(commands.Cog):
         if not await voice_check(ctx, voice):
             return
         elif not songs:
-            await ctx.send('Queue is empty.')
+            await ctx.send('Queue is empty, nothing to remove.')
             return
         else:
-            tmp = songs[index - 1]
-            del(songs[index - 1])
-            await ctx.send(f'`{tmp.title}` removed from queue.')
+            if index > 0 and index < len(songs):
+                tmp = songs[index - 1]
+                del(songs[index - 1])
+                await ctx.send(f'🎧 **Removed:** {tmp.title}')
+            else:
+                await ctx.send('Invalid index. Check it via the !queue command.')
 
     @commands.command(help='This command displays the current queue')
     async def queue(self, ctx):
@@ -265,7 +292,7 @@ class music(commands.Cog):
             await ctx.send('Queue is empty.')
             return
         else:
-            await ctx.send(f'The current queue is: `{[song.title for song in songs]}!`')
+            await ctx.send(embed=self.create_queue_embed())
 
     @commands.command(help='This command plays songs or adds them to the current queue')
     async def play(self, ctx, *, url):
@@ -297,14 +324,14 @@ class music(commands.Cog):
                     if not repeating:
                         current_song = songs.pop(0)
                         ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
-                        await ctx.send('**Now playing:** {}'.format(current_song.title))
+                        await ctx.send(embed=self.create_play_embed())
                     else:
                         current_song = await YTDLSource.create_source(ctx, current_song.title, loop=self.client.loop)
                         ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
                 except YTDLError as e:
                     await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
             else:
-                await ctx.send(f'`{song.title}` added to queue!')
+                await ctx.send(f'🎧 **Enqueued:** {song.title}')
 
     async def play_next(self, ctx):
         global songs, current_song, repeating
@@ -314,7 +341,7 @@ class music(commands.Cog):
                 if not repeating:
                     current_song = songs.pop(0)
                     ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
-                    await ctx.send('**Now playing:** {}'.format(current_song.title)) 
+                    await ctx.send(embed=self.create_play_embed()) 
                 else:
                     current_song = await YTDLSource.create_source(ctx, current_song.title, loop=self.client.loop)
                     ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
@@ -330,6 +357,28 @@ class music(commands.Cog):
                 repeating = False
                 current_song = None
 
+    def create_play_embed(self):
+        embed = (discord.Embed(title='🎧  Now playing',
+                               description=f'{current_song.title}'.format(self),
+                               color=discord.Color.blurple())
+                 .add_field(name='Duration', value=current_song.duration)
+                 .add_field(name='Channel', value=f'[{current_song.uploader}]({current_song.uploader_url})'.format(self))
+                 .add_field(name='URL', value=f'[YouTube]({current_song.url})'.format(self))
+                 .set_thumbnail(url=current_song.thumbnail))
+        return embed
+
+    def create_queue_embed(self):
+        titles = [song.title for song in songs]
+        enum_titles = []
+
+        for idx, val in enumerate(titles, start=1):
+            enum_titles.append(f'**{idx}.** {val}')
+
+        embed = (discord.Embed(title='🎧  Current Queue',
+                               description='\n'.join(enum_titles).format(self),
+                               color=discord.Color.blurple()))
+        return embed
+    
     def setup(client):
         client.add_cog(music(client))
 
@@ -349,6 +398,13 @@ async def on_ready():
     await change_status()
     print('Bot is online.')
 
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.errors.CommandNotFound):
+        await ctx.send("Huh? There is no such command (yet).")
+    else:
+        await ctx.send(f"Error: {str(error)}")
+
 async def voice_check(ctx, voice):
     if not voice:
         await ctx.send('Huh? I\'m not in a voice channel right now.')
@@ -362,11 +418,6 @@ async def voice_check(ctx, voice):
     else:
         return True
 
-def cleanup():
-    cache_path = ''
-    file_list = os.listdir(cache_path)
-    for file in file_list:
-        if file.endswith('.webm'):
-            os.remove(os.path.join(cache_path, file))
+
 
 client.run(bot_token)

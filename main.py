@@ -7,6 +7,8 @@ import discord
 from discord.ext import commands, tasks
 import youtube_dl
 
+from async_timeout import timeout
+
 bot_token = ''
 
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -126,9 +128,9 @@ class general(commands.Cog):
     def setup(client):
         client.add_cog(general(client))
 
-current_song = ''
-songs = []
 repeating = False
+songs = []
+current_song = None
 
 class music(commands.Cog):
     def __init__(self, client):
@@ -148,7 +150,7 @@ class music(commands.Cog):
     
     @commands.command(help='This command makes the bot leave the voice channel and empties the queue')
     async def leave(self, ctx):
-        global songs, repeating
+        global songs, repeating, current_song
         
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not await voice_check(ctx, voice):
@@ -156,9 +158,10 @@ class music(commands.Cog):
         else:
             await ctx.voice_client.disconnect()
             await ctx.message.add_reaction('👋')
+
             songs = []
             repeating = False
-            current_song = ''
+            current_song = None
             #cleanup()
 
     @commands.command(help='This command skips the current song')
@@ -173,9 +176,10 @@ class music(commands.Cog):
             return
         else:
             ctx.voice_client.stop()
-            await ctx.send('Skipped.')
-            if songs:
-                await ctx.invoke(self.client.get_command('play'), url='')
+            if(repeating):
+                await ctx.send('Skipped, but still in repeat mode!')
+            else:
+                await ctx.send('Skipped.')
 
     @commands.command(help='This command pauses the song')
     async def pause(self, ctx):
@@ -203,26 +207,24 @@ class music(commands.Cog):
 
     @commands.command(help='This command repeats/unrepeats the current song')
     async def repeat(self, ctx):
-        global songs, current_song, repeating
+        global repeating
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not await voice_check(ctx, voice):
             return
-        elif not voice.is_playing():
+        elif not voice.is_playing() or current_song == '':
             await ctx.send('Nothing to repeat.')
             return
         else:
             repeating = not repeating
             if repeating:
                 await ctx.message.add_reaction('🔁')
-                songs.insert(0, current_song)
             else:
                 await ctx.message.add_reaction('➡️')
-                del(songs[0])
 
     @commands.command(help='This command stops the current song and empties the queue')
     async def stop(self, ctx):
-        global songs
+        global songs, current_song, repeating
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if not await voice_check(ctx, voice):
@@ -231,12 +233,12 @@ class music(commands.Cog):
             await ctx.send('Nothing to stop.')
             return
         else:
+            songs = []
+            current_song = None
+            repeating = False
+            
             voice.stop()
             await ctx.message.add_reaction('⏹️')
-
-            songs = []
-            repeating = False
-            current_song = ''
 
     @commands.command(name='remove', help='This command removes a specific song from the current queue')
     async def _remove(self, ctx, index: int):
@@ -251,12 +253,10 @@ class music(commands.Cog):
         else:
             tmp = songs[index - 1]
             del(songs[index - 1])
-            await ctx.send(f'`{tmp}` removed from queue.')
+            await ctx.send(f'`{tmp.title}` removed from queue.')
 
     @commands.command(help='This command displays the current queue')
     async def queue(self, ctx):
-        global songs
-
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         
         if not await voice_check(ctx, voice):
@@ -264,42 +264,71 @@ class music(commands.Cog):
         elif not songs:
             await ctx.send('Queue is empty.')
             return
-        
         else:
-            await ctx.send(f'The current queue is: `{songs}!`')
-             
+            await ctx.send(f'The current queue is: `{[song.title for song in songs]}!`')
 
     @commands.command(help='This command plays songs or adds them to the current queue')
     async def play(self, ctx, *, url):
         global songs, current_song, repeating
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+        if ctx.author.voice is None:
+            await ctx.send("Ur not in a voice channel lmao.")
+            return
+        elif voice and ctx.voice_client.channel != ctx.author.voice.channel:
+            await ctx.send('Ur not in that voice channel. 🌚')
+            return
+
         if not voice:
             await ctx.invoke(self.client.get_command('join'))
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if voice:
+            # TODO: catch missing url exception
             if url != '':
-                songs.append(url)
+                song = await YTDLSource.create_source(ctx, url, loop=self.client.loop)
+                songs.append(song)
+            else:
+                await ctx.send('Nothing to play!')
+                return
 
             if not voice.is_playing():
-                if songs:
-                    try:
-                        source = await YTDLSource.create_source(ctx, songs[0], loop=self.client.loop)
-                        ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
-                        await ctx.send('**Now playing:** {}'.format(source.title)) 
-                    except YTDLError as e:
-                        await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
-                    
-                    if repeating:
-                        songs.insert(0, songs[0])
-                        
-                    current_song = songs[0]
-                    del (songs[0])
-                else:
-                    await ctx.send('Nothing to play.')
+                try:
+                    if not repeating:
+                        current_song = songs.pop(0)
+                        ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
+                        await ctx.send('**Now playing:** {}'.format(current_song.title))
+                    else:
+                        current_song = await YTDLSource.create_source(ctx, current_song.title, loop=self.client.loop)
+                        ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
+                except YTDLError as e:
+                    await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
             else:
-                await ctx.send(f'`{url}` added to queue!') 
+                await ctx.send(f'`{song.title}` added to queue!')
+
+    async def play_next(self, ctx):
+        global songs, current_song, repeating
+
+        if songs or repeating:
+            try:
+                if not repeating:
+                    current_song = songs.pop(0)
+                    ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
+                    await ctx.send('**Now playing:** {}'.format(current_song.title)) 
+                else:
+                    current_song = await YTDLSource.create_source(ctx, current_song.title, loop=self.client.loop)
+                    ctx.voice_client.play(current_song, after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
+            except YTDLError as e:
+                await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
+        else:
+            await asyncio.sleep(210)
+            voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+            if not voice.is_playing():
+                await ctx.voice_client.disconnect()
+
+                songs = []
+                repeating = False
+                current_song = None
 
     def setup(client):
         client.add_cog(music(client))

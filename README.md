@@ -32,3 +32,5 @@
 ## Future Milestones:
 * make bot spam/abuse proof (e.g. limits for long videos?)
 * support for multiple discord servers?
+* support for spotify links
+* support for youtube playlists with auto-enqueueing

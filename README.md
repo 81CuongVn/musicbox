@@ -28,6 +28,7 @@
 * Ability to output streamed or downloaded songs via youtube search
 * Play, queue, repeat, pause, resume, stop and skip songs
 * View songs in queue and remove specific songs
+* Multi-server usage support
 
 ## Future Milestones:
 * make bot spam/abuse proof (e.g. limits for long videos?)

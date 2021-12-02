@@ -215,7 +215,7 @@ class music(commands.Cog):
             return
         else:
             ctx.voice_client.stop()
-            if(repeating):
+            if(repeating[ctx.guild.id]):
                 await ctx.send('🎧 **Skipped. Still in repeat mode tho!**')
             else:
                 await ctx.send('🎧 **Skipped.**')

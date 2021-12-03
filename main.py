@@ -142,7 +142,13 @@ class admin(commands.Cog):
         embed = (discord.Embed( title='🎧 Invite Link', 
                                 description='https://discordapp.com/oauth2/authorize?client_id={}&permissions=8&scope=bot'.format(bot_id), 
                                 color=discord.Color.blurple()))
-        await ctx.send(embed=embed, delete_after=1)
+        await ctx.send(embed=embed)
+
+    @commands.command(hidden=True, help='Gets all servers the bot is currently in.')
+    @commands.is_owner()
+    async def servers(self, ctx):
+        servers = await client.fetch_guilds().flatten()
+        await ctx.send(f'Servers: {[server.name for server in servers]}')
 
     def setup(client):
         client.add_cog(admin(client))
@@ -158,6 +164,18 @@ class general(commands.Cog):
     @commands.command(help='This command says hi to the user')
     async def hello(self, ctx):
         await ctx.send(f'Moin {ctx.message.author.name}.')
+    
+    @commands.command(help='This command informs the user about the bot')
+    async def about(self, ctx):
+        servers = client.guilds
+
+        embed = (discord.Embed(title='🎧  About me',
+                               description='Hey, I\'m Kevin\'s music bot written in Python and hosted 24/7 on Heroku.',
+                               color=discord.Color.blurple())
+                               .add_field(name='Owner', value='Kevin#4854'.format(self))
+                               .add_field(name='Servers', value=f'{len(servers)}'.format(self))
+                               .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot'.format(self), inline=False))
+        await ctx.send(embed=embed)
 
     def setup(client):
         client.add_cog(general(client))
@@ -195,7 +213,7 @@ class music(commands.Cog):
         global songs, repeating, current_song
         
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         else:
             await ctx.voice_client.disconnect()
@@ -208,14 +226,14 @@ class music(commands.Cog):
     @commands.command(help='This command skips the current song')
     async def skip(self, ctx):
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to skip.')
             return
         else:
             ctx.voice_client.stop()
-            if(repeating):
+            if(repeating[ctx.guild.id]):
                 await ctx.send('🎧 **Skipped. Still in repeat mode tho!**')
             else:
                 await ctx.send('🎧 **Skipped.**')
@@ -223,7 +241,7 @@ class music(commands.Cog):
     @commands.command(help='This command pauses the current song')
     async def pause(self, ctx):
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to pause.')
@@ -235,7 +253,7 @@ class music(commands.Cog):
     @commands.command(help='This command resumes the current song')
     async def resume(self, ctx):
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not voice.is_paused():
             await ctx.send('Nothing is paused.')
@@ -249,7 +267,7 @@ class music(commands.Cog):
         global repeating
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not voice.is_playing() or current_song[ctx.guild.id] == None:
             await ctx.send('Nothing to repeat.')
@@ -266,13 +284,13 @@ class music(commands.Cog):
         global songs
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not songs[ctx.guild.id]:
             await ctx.send('Queue is empty, nothing to shuffle.')
             return
         else:
-            songs[ctx.guild.id] = random.sample(songs[ctx.guild.id], len(songs[ctx.guild.id]))
+            random.shuffle(songs[ctx.guild.id])
             await ctx.send('🎧 **Queue shuffled.**')
 
     @commands.command(help='This command stops the current song and empties the queue')
@@ -280,7 +298,7 @@ class music(commands.Cog):
         global songs, current_song, repeating
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not voice.is_playing():
             await ctx.send('Nothing to stop.')
@@ -298,7 +316,7 @@ class music(commands.Cog):
         global songs, current_song
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not songs[ctx.guild.id]:
             await ctx.send('Queue is empty, nothing to clear.')
@@ -312,7 +330,7 @@ class music(commands.Cog):
         global songs
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not songs[ctx.guild.id]:
             await ctx.send('Queue is empty, nothing to remove.')
@@ -329,13 +347,22 @@ class music(commands.Cog):
     async def queue(self, ctx):
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         
-        if not await voice_check(ctx, voice):
+        if not await self.voice_check(ctx, voice):
             return
         elif not songs[ctx.guild.id]:
             await ctx.send('Queue is empty.')
             return
         else:
-            await ctx.send(embed=self.create_queue_embed(ctx=ctx))
+            titles = [song.title for song in songs[ctx.guild.id]]
+            enum_titles = []
+
+            for idx, val in enumerate(titles, start=1):
+                enum_titles.append(f'**{idx}.** {val}')
+
+            embed = (discord.Embed(title='🎧  Current Queue',
+                                description='\n'.join(enum_titles).format(self),
+                                color=discord.Color.blurple()))
+            await ctx.send(embed=embed)
 
     @commands.command(help='This command plays songs or adds them to the current queue')
     async def play(self, ctx, *, url):
@@ -412,25 +439,38 @@ class music(commands.Cog):
                  .set_thumbnail(url=current_song[ctx.guild.id].thumbnail))
         return embed
 
-    def create_queue_embed(self, ctx):
-        titles = [song.title for song in songs[ctx.guild.id]]
-        enum_titles = []
+    # check voice_states of member and bot
+    async def voice_check(self, ctx, voice):
+        if not voice:
+            await ctx.send('Huh? I\'m not in a voice channel right now.')
+            return False
+        elif ctx.author.voice is None:
+            await ctx.send("Ur not in a voice channel lmao.")
+            return False
+        elif ctx.voice_client.channel != ctx.author.voice.channel:
+            await ctx.send('Ur not in that voice channel. 🌚')
+            return False
+        else:
+            return True
 
-        for idx, val in enumerate(titles, start=1):
-            enum_titles.append(f'**{idx}.** {val}')
-
-        embed = (discord.Embed(title='🎧  Current Queue',
-                               description='\n'.join(enum_titles).format(self),
-                               color=discord.Color.blurple()))
-        return embed
-    
     def setup(client):
         client.add_cog(music(client))
+
+class EmbedHelpCommand(commands.MinimalHelpCommand):
+    async def send_pages(self):
+        destination = self.get_destination()
+        e = discord.Embed(title='🎧  Commands', color=discord.Color.blurple(), description='')
+        for page in self.paginator.pages:
+            e.description += page
+        await destination.send(embed=e)
 
 cogs = [admin, general, music]
 
 client = commands.Bot(command_prefix='!')
+# customize !help command
+client.help_command = EmbedHelpCommand(no_category='misc')
 
+# load cogs
 for i in range(len(cogs)):
     cogs[i].setup(client)
 
@@ -438,11 +478,7 @@ for i in range(len(cogs)):
 async def change_status():
     await client.change_presence(activity=discord.Game(name="Fortnite"))
 
-@client.event
-async def on_ready():
-    await change_status()
-    print('Bot is online.')
-
+# send error messages
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CommandNotFound):
@@ -450,19 +486,40 @@ async def on_command_error(ctx, error):
     else:
         await ctx.send(f"Error: {str(error)}")
 
-async def voice_check(ctx, voice):
-    if not voice:
-        await ctx.send('Huh? I\'m not in a voice channel right now.')
-        return False
-    elif ctx.author.voice is None:
-        await ctx.send("Ur not in a voice channel lmao.")
-        return False
-    elif ctx.voice_client.channel != ctx.author.voice.channel:
-        await ctx.send('Ur not in that voice channel. 🌚')
-        return False
-    else:
-        return True
+# auto-disconnect when alone in channel
+@client.event
+async def on_voice_state_update(member, before, after):
+    global songs, current_song, repeating
 
+    voice_state = member.guild.voice_client
+    if voice_state is None:
+        return 
+
+    if len(voice_state.channel.members) == 1:
+        songs[member.guild.id] = []
+        current_song[member.guild.id] = None
+        repeating[member.guild.id] = False
+
+        await voice_state.disconnect()
+
+@client.event
+async def on_guild_join(guild):
+    general = discord.utils.find(lambda x: x.name == 'general',  guild.text_channels)
+    allgemein = discord.utils.find(lambda x: x.name == 'allgemein',  guild.text_channels)
+
+    if general and general.permissions_for(guild.me).send_messages:
+        await general.send('🎧 **Hello {}!** My prefix is \'!\', use ``!help`` for more info :)'.format(guild.name))
+    elif allgemein and allgemein.permissions_for(guild.me).send_messages:
+        await allgemein.send('🎧 **Hello {}!** My prefix is \'!\', use ``!help`` for more info :)'.format(guild.name))
+    
+    print(f'Joined the server {guild.name}.')
+
+
+# startup behavior
+@client.event
+async def on_ready():
+    await change_status()
+    print('MusicBox is online.')
 
 
 client.run(bot_token)

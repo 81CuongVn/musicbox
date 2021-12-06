@@ -50,7 +50,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         self.title = data.get('title')
         self.url = data.get('webpage_url')
-        self.duration = self.parse_duration(int(data.get('duration')))
+        self.duration = data.get('duration')
         self.uploader = data.get('uploader')
         self.uploader_url = data.get('uploader_url')
         self.thumbnail = data.get('thumbnail')
@@ -107,24 +107,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
 
         return cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info)
-    
-    @staticmethod
-    def parse_duration(duration: int):
-        minutes, seconds = divmod(duration, 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
-
-        duration = []
-        if days > 0:
-            duration.append('{} days'.format(days))
-        if hours > 0:
-            duration.append('{} hours'.format(hours))
-        if minutes > 0:
-            duration.append('{} minutes'.format(minutes))
-        if seconds > 0:
-            duration.append('{} seconds'.format(seconds))
-
-        return ', '.join(duration)
 
 class admin(commands.Cog):
     def __init__(self, client):
@@ -359,10 +341,27 @@ class music(commands.Cog):
             for idx, val in enumerate(titles, start=1):
                 enum_titles.append(f'**{idx}.** {val}')
 
+            durations = [song.duration for song in songs[ctx.guild.id]]
+            total_duration = sum(durations)
+
             embed = (discord.Embed(title='🎧  Current Queue',
                                 description='\n'.join(enum_titles).format(self),
-                                color=discord.Color.blurple()))
+                                color=discord.Color.blurple())
+                                .add_field(name='Total time', value=self.parse_duration(duration=total_duration))
+                                )
             await ctx.send(embed=embed)
+
+    # TODO: Add time left?
+    @commands.command(help='This command displays the current song', aliases=['np'])
+    async def nowplaying(self, ctx):
+        voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+
+        if not await self.voice_check(ctx, voice):
+            return
+        elif current_song[ctx.guild.id] == None or not voice.is_playing():
+            await ctx.send('Nothing is being played right now.')
+        else:
+            await ctx.send(f'🎧 **Now playing:** {current_song[ctx.guild.id].title}')
 
     @commands.command(help='This command plays songs or adds them to the current queue')
     async def play(self, ctx, *, url):
@@ -433,7 +432,7 @@ class music(commands.Cog):
         embed = (discord.Embed(title='🎧  Now playing',
                                description=f'{current_song[ctx.guild.id].title}'.format(self),
                                color=discord.Color.blurple())
-                 .add_field(name='Duration', value=current_song[ctx.guild.id].duration)
+                 .add_field(name='Duration', value=self.parse_duration(duration=current_song[ctx.guild.id].duration))
                  .add_field(name='Channel', value=f'[{current_song[ctx.guild.id].uploader}]({current_song[ctx.guild.id].uploader_url})'.format(self))
                  .add_field(name='URL', value=f'[YouTube]({current_song[ctx.guild.id].url})'.format(self))
                  .set_thumbnail(url=current_song[ctx.guild.id].thumbnail))
@@ -452,6 +451,26 @@ class music(commands.Cog):
             return False
         else:
             return True
+
+    # calculate duration
+    @staticmethod
+    def parse_duration(duration):
+        duration = int(duration)
+        minutes, seconds = divmod(duration, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+
+        duration = []
+        if days > 0:
+            duration.append('{} days'.format(days))
+        if hours > 0:
+            duration.append('{} hours'.format(hours))
+        if minutes > 0:
+            duration.append('{} minutes'.format(minutes))
+        if seconds > 0:
+            duration.append('{} seconds'.format(seconds))
+
+        return ', '.join(duration)
 
     def setup(client):
         client.add_cog(music(client))

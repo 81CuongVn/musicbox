@@ -15,8 +15,8 @@ import random
 from async_timeout import timeout
 
 # SENSITIVE
-bot_token = ''
-bot_id = ''
+bot_token = 'MzA2MDI2MTg1NDgwMjA4Mzg1.WP3fGA.U8d7yEijCkQYnSkg7rdF8IWPeJ8'
+bot_id = '306026185480208385'
 
 yt_dlp.utils.bug_reports_message = lambda: ''
 

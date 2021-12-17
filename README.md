@@ -25,12 +25,12 @@
 * Add your bot to your server with the link provided in the Discord Developer Portal
 
 ## Key Features:
-* Ability to output streamed or downloaded songs via youtube search
+* Ability to play songs from youtube urls or search keywords
 * Play, queue, repeat, pause, resume, stop and skip songs
 * View songs in queue and remove specific songs
 * Multi-server usage support
+* Youtube playlist support
 
 ## Future Milestones:
 * make bot spam/abuse proof (e.g. limits for long videos?)
 * support for spotify links
-* support for youtube playlists with auto-enqueueing

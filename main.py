@@ -6,17 +6,19 @@ import functools
 import discord
 from discord import embeds
 from discord.ext import commands, tasks
+from dotenv import load_dotenv
 
-# fork of ytdl, patched and maintained
+# fork of ytdl, more patched and maintained
 import yt_dlp
 
 import random
 
 from async_timeout import timeout
 
-# SENSITIVE
-bot_token = ''
-bot_id = ''
+# load bot credentials
+load_dotenv()
+bot_token = os.getenv("BOT_TOKEN")
+bot_id = os.getenv("BOT_ID")
 
 yt_dlp.utils.bug_reports_message = lambda: ''
 

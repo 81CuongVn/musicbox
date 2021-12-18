@@ -1,5 +1,12 @@
 # Simple Discord Music Bot
 
+## Key Features:
+* Ability to play songs from youtube urls or search keywords
+* Play, queue, repeat, pause, resume, stop and skip songs
+* View songs in queue and remove specific songs
+* Multi-server usage support
+* Youtube playlist support (limited to playlists with ~ 20 songs due to bandwidth reasons)
+
 ## Local Host:
 ### Requirements:
 * Python 3.7+
@@ -24,13 +31,6 @@
 * Add your bot to your server with the link provided in the Discord Developer Portal
 * Turn on your Dyno Worker under Resources
 * For 24/7 host: Add your credit card to increase dyno hours for free
-
-## Key Features:
-* Ability to play songs from youtube urls or search keywords
-* Play, queue, repeat, pause, resume, stop and skip songs
-* View songs in queue and remove specific songs
-* Multi-server usage support
-* Youtube playlist support (limited to playlists with ~ 20 songs due to bandwidth reasons)
 
 ## Future Milestones:
 * support for spotify links

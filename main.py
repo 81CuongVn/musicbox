@@ -12,10 +12,9 @@ from dotenv import load_dotenv
 import yt_dlp
 
 import random
-
 from async_timeout import timeout
 
-# load bot credentials
+# get bot credentials
 load_dotenv()
 bot_token = os.getenv("BOT_TOKEN")
 bot_id = os.getenv("BOT_ID")

@@ -7,7 +7,7 @@
 * Discord, both app and developer bot (ownership)
 
 ### Usage:
-* Manually create a file named **`.env``** and insert your bot-token (as BOT_TOKEN) and bot-id (as BOT_ID)
+* Manually create a file named **`.env`** and insert your bot-token (as BOT_TOKEN) and bot-id (as BOT_ID)
 * Install required python libraries with ```pip install -r requirements.txt```
 * Add your bot to your server with the link provided in the Discord Developer Portal
 * Start the bot with ```py main.py```

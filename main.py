@@ -47,7 +47,7 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 class YTDLError(Exception):
     pass
 
-threadLimiter = threading.BoundedSemaphore(30)
+sem = asyncio.Semaphore(10)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -85,7 +85,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             if not process_info:
                 raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
 
-        threadLimiter.acquire()
+        sem.acquire()
         try:
             sources = []
             for entry in process_info:
@@ -116,7 +116,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 
                 sources.append(cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info))
         finally:
-            threadLimiter.release()
+            sem.release()
 
         return sources
 

@@ -14,6 +14,7 @@ import yt_dlp
 import random
 from async_timeout import timeout
 import concurrent.futures
+import threading
 
 # get bot credentials
 load_dotenv()
@@ -45,6 +46,8 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 class YTDLError(Exception):
     pass
+
+threadLimiter = threading.BoundedSemaphore(3)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -82,33 +85,37 @@ class YTDLSource(discord.PCMVolumeTransformer):
             if not process_info:
                 raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
 
-        sources = []
-        for entry in process_info:
-            # differentiation necessary, as yt playlists have different dict_keys
-            if playlist_detected == False:
-                webpage_url = entry['webpage_url']
-            else:
-                webpage_url = entry['url']
+        threadLimiter.acquire()
+        try:
+            sources = []
+            for entry in process_info:
+                # differentiation necessary, as yt playlists have different dict_keys
+                if playlist_detected == False:
+                    webpage_url = entry['webpage_url']
+                else:
+                    webpage_url = entry['url']
 
-            print('getting info...')
-            partial = functools.partial(ytdl.extract_info, webpage_url, download=False)
-            print(f'got {webpage_url}')
-            processed_info = await loop.run_in_executor(None, partial)
+                print('getting info...')
+                partial = functools.partial(ytdl.extract_info, webpage_url, download=False)
+                print(f'got {webpage_url}')
+                processed_info = await loop.run_in_executor(None, partial)
 
-            if processed_info is None:
-                raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
+                if processed_info is None:
+                    raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
 
-            if 'entries' not in processed_info:
-                info = processed_info
-            else:
-                info = None
-                while info is None:
-                    try:
-                        info = processed_info['entries'].pop(0)
-                    except IndexError:
-                        raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
-            
-            sources.append(cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info))
+                if 'entries' not in processed_info:
+                    info = processed_info
+                else:
+                    info = None
+                    while info is None:
+                        try:
+                            info = processed_info['entries'].pop(0)
+                        except IndexError:
+                            raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
+                
+                sources.append(cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info))
+        finally:
+            threadLimiter.release()
 
         return sources
 
@@ -564,10 +571,6 @@ async def on_guild_join(guild):
 @client.event
 async def on_ready():
     await change_status()
-
-    executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=3,
-    )
     print('MusicBox is online.')
 
 

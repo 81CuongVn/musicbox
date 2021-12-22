@@ -47,7 +47,7 @@ ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 class YTDLError(Exception):
     pass
 
-threadLimiter = threading.BoundedSemaphore(3)
+threadLimiter = threading.BoundedSemaphore(30)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):

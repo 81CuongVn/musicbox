@@ -85,7 +85,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             if not process_info:
                 raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
 
-        sem.acquire()
+        await sem.acquire()
         try:
             sources = []
             for entry in process_info:

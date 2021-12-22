@@ -13,6 +13,7 @@ import yt_dlp
 
 import random
 from async_timeout import timeout
+import concurrent.futures
 
 # get bot credentials
 load_dotenv()
@@ -563,6 +564,10 @@ async def on_guild_join(guild):
 @client.event
 async def on_ready():
     await change_status()
+
+    executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=3,
+    )
     print('MusicBox is online.')
 
 

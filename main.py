@@ -69,7 +69,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
 
         # prevents this method from opening to many stale threads (especially when playing playlists)
-        executor = concurrent.futures.ThreadPoolExecutor(4)
+        executor = concurrent.futures.ThreadPoolExecutor(1)
 
         # first extraction: determine song type
         partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)

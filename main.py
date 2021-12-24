@@ -57,6 +57,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         super().__init__(source, volume)
 
         self.data = data
+        self.requester = data.get('requester')
+        self.channel = data.get('channel')
 
         self.title = data.get('title')
         self.url = data.get('webpage_url')
@@ -103,7 +105,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             # second extraction: actual audio processing + retrieval of other keys (thumbnail, duration etc.)
             partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)
             data = await loop.run_in_executor(executor, partial)
-            print(f'{threading.active_count()} Threads active.')
+            # print(f'{threading.active_count()} Threads active.')
 
             if data is None:
                 raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
@@ -118,6 +120,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     except IndexError:
                         raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
 
+            # add user + channel info to dict
+            info['requester'] = ctx.author
+            info['channel'] = ctx.channel
             sources.append(cls(discord.FFmpegPCMAudio(info['url'], **cls.ffmpeg_options), data=info))
 
         return sources
@@ -435,7 +440,7 @@ class music(commands.Cog):
                 if not repeating[ctx.guild.id]:
                     current_song[ctx.guild.id] = songs[ctx.guild.id].pop(0)
                     ctx.voice_client.play(current_song[ctx.guild.id], after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
-                    await ctx.send(f'🎧 **Now playing:** {current_song[ctx.guild.id].title}') 
+                    await current_song[ctx.guild.id].channel.send(f'🎧 **Now playing:** {current_song[ctx.guild.id].title}') 
                 else:
                     repeated_song = await YTDLSource.create_source(ctx, current_song[ctx.guild.id].url, loop=self.client.loop)
                     current_song[ctx.guild.id] = repeated_song[0]
@@ -466,14 +471,15 @@ class music(commands.Cog):
             duration = '/'
         else:
             duration = song.duration
-            
+
         embed = (discord.Embed(title=headline,
                                description=f'{song.title}'.format(self),
                                color=discord.Color.blurple())
                  .add_field(name='Duration', value=self.parse_duration(duration))
                  .add_field(name='Channel', value=f'[{song.uploader}]({song.uploader_url})'.format(self))
                  .add_field(name='URL', value=f'[YouTube]({song.url})'.format(self))
-                 .set_thumbnail(url=song.thumbnail))
+                 .set_thumbnail(url=song.thumbnail)
+                 .set_footer(text='Requested by {}'.format(song.requester), icon_url=song.requester.avatar_url))
         return embed
 
     # check voice_states of member and bot

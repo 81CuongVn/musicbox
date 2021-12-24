@@ -102,7 +102,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             # second extraction: actual audio processing + retrieval of other keys (thumbnail, duration etc.)
             partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)
             data = await loop.run_in_executor(executor, partial)
-            # print(f'{threading.active_count()} Threads active.')
+            print(f'{threading.active_count()} Threads active.')
 
             if data is None:
                 raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))

@@ -98,7 +98,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 webpage_url = entry['webpage_url']
             else:
                 webpage_url = entry['url']
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
 
             # second extraction: actual audio processing + retrieval of other keys (thumbnail, duration etc.)
             partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)

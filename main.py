@@ -538,6 +538,7 @@ for i in range(len(cogs)):
 async def change_status():
     await client.change_presence(activity=discord.Game(name="Fortnite"))
 
+'''
 # send error messages
 @client.event
 async def on_command_error(ctx, error):
@@ -545,6 +546,7 @@ async def on_command_error(ctx, error):
         await ctx.send("❌ Huh? There is no such command (yet). Check commands via ``!help``.")
     else:
         await ctx.send(f"⚠️ {str(error)}")
+'''
 
 # auto-disconnect when alone in channel
 @client.event

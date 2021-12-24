@@ -13,43 +13,45 @@ import yt_dlp
 
 import random
 from async_timeout import timeout
-import concurrent.futures
 import threading
+import concurrent.futures
 
 # get bot credentials
 load_dotenv()
 bot_token = os.getenv("BOT_TOKEN")
 bot_id = os.getenv("BOT_ID")
 
+# ignore unnecessary bug reports
 yt_dlp.utils.bug_reports_message = lambda: ''
-
-ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0'  # bind to ipv4 since ipv6 addresses cause issues sometimes
-}
-
-ffmpeg_options = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
-    'options': '-vn'
-}
-
-ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 class YTDLError(Exception):
     pass
 
-sem = asyncio.BoundedSemaphore(10)
 
 class YTDLSource(discord.PCMVolumeTransformer):
+    ytdl_format_options = {
+        'format': 'bestaudio/best',
+        'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+        'restrictfilenames': True,
+        'noplaylist': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': False,
+        'logtostderr': False,
+        'quiet': True,
+        'no_warnings': True,
+        'default_search': 'auto',
+        # bind to ipv4 since ipv6 addresses cause issues sometimes
+        'source_address': '0.0.0.0'
+    }
+
+    # prevent termination of FFMPEG executable due to corrupt packages
+    ffmpeg_options = {
+        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
+        'options': '-vn'
+    }
+
+    ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
+    
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
 
@@ -66,18 +68,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def create_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(ytdl.extract_info, search, download=False, process=False)
-        data = await loop.run_in_executor(None, partial)
+        # prevents this method from opening to many stale threads (especially when playing playlists)
+        executor = concurrent.futures.ThreadPoolExecutor(4)
+
+        # first extraction: determine song type
+        partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
+        data = await loop.run_in_executor(executor, partial)
 
         if data is None:
             raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
 
         playlist_detected = False
         if 'entries' not in data:
-            # single yt song enqueued
+            # search song via keyword or url
             process_info = [data]
         else:
-            # yt playlist enqueued
+            # search song via yt playlist
             playlist_detected = True
             await ctx.send('🎧 **Processing playlist.** This may take a while...')
             process_info = [entry for entry in data['entries']]
@@ -93,28 +99,28 @@ class YTDLSource(discord.PCMVolumeTransformer):
             else:
                 webpage_url = entry['url']
 
-            print('getting info...')
-            partial = functools.partial(ytdl.extract_info, webpage_url, download=False)
-            print(f'got {webpage_url}')
-            print(f'{threading.active_count()} Threads active.')
-            processed_info = await loop.run_in_executor(None, partial)
+            # second extraction: actual audio processing + retrieval of other keys (thumbnail, duration etc.)
+            partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)
+            data = await loop.run_in_executor(executor, partial)
+            # print(f'{threading.active_count()} Threads active.')
 
-            if processed_info is None:
+            if data is None:
                 raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
 
-            if 'entries' not in processed_info:
-                info = processed_info
+            if 'entries' not in data:
+                info = data
             else:
                 info = None
                 while info is None:
                     try:
-                        info = processed_info['entries'].pop(0)
+                        info = data['entries'].pop(0)
                     except IndexError:
                         raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
-            
-            sources.append(cls(discord.FFmpegPCMAudio(info['url'], **ffmpeg_options), data=info))
+
+            sources.append(cls(discord.FFmpegPCMAudio(info['url'], **cls.ffmpeg_options), data=info))
 
         return sources
+
 
 class admin(commands.Cog):
     def __init__(self, client):
@@ -143,6 +149,7 @@ class admin(commands.Cog):
     def setup(client):
         client.add_cog(admin(client))
 
+        
 class general(commands.Cog):
     def __init__(self, client):
             self.client = client
@@ -170,6 +177,7 @@ class general(commands.Cog):
     def setup(client):
         client.add_cog(general(client))
 
+        
 repeating = {}
 songs = {}
 current_song = {}
@@ -281,7 +289,7 @@ class music(commands.Cog):
             return
         else:
             random.shuffle(songs[ctx.guild.id])
-            await ctx.send('🎧 **Queue shuffled.** Check it via ``!queue``.')
+            await ctx.send('🎧 **Queue shuffled.** Check via ``!queue``.')
 
     @commands.command(help='This command stops the current song and empties the queue')
     async def stop(self, ctx):
@@ -378,7 +386,7 @@ class music(commands.Cog):
         elif current_song[ctx.guild.id] == None or not voice.is_playing():
             await ctx.send('❌ Nothing is being played right now.')
         else:
-            await ctx.send(embed=self.create_play_embed(ctx=ctx))
+            await ctx.send(embed=self.create_play_embed(ctx=ctx, song=None))
 
     @commands.command(help='This command plays songs or adds them to the current queue')
     async def play(self, ctx, *, url):
@@ -397,8 +405,7 @@ class music(commands.Cog):
 
         voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
         if voice:
-            async with sem:
-                sources = await YTDLSource.create_source(ctx, url, loop=self.client.loop)
+            sources = await YTDLSource.create_source(ctx, search=url, loop=self.client.loop)
             try:
                 songs[ctx.guild.id].extend(sources)
             except:
@@ -410,14 +417,14 @@ class music(commands.Cog):
                     ctx.voice_client.play(current_song[ctx.guild.id], after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
                     if len(sources) > 1:
                         await ctx.send(f'🎧 **Enqueued:** {len(sources)} songs')
-                    await ctx.send(embed=self.create_play_embed(ctx=ctx))
+                    await ctx.send(embed=self.create_play_embed(ctx=ctx, song=None))
                 except YTDLError as e:
                     await ctx.send('⚠️ An error occurred while processing this request: {}'.format(str(e)))
             else:
                 if len(sources) > 1:
                     await ctx.send(f'🎧 **Enqueued:** {len(sources)} songs')
                 else:
-                    await ctx.send(embed=self.create_enqueued_embed(ctx=ctx, song=sources[0]))
+                    await ctx.send(embed=self.create_play_embed(ctx=ctx, song=sources[0]))
 
     async def play_next(self, ctx):
         global songs, current_song, repeating
@@ -445,22 +452,24 @@ class music(commands.Cog):
                 repeating[ctx.guild.id] = False
                 current_song[ctx.guild.id] = None
 
-    # create embedded message methods
-    def create_play_embed(self, ctx):
-        embed = (discord.Embed(title='🎧  Now playing',
-                               description=f'{current_song[ctx.guild.id].title}'.format(self),
-                               color=discord.Color.blurple())
-                 .add_field(name='Duration', value=self.parse_duration(duration=current_song[ctx.guild.id].duration))
-                 .add_field(name='Channel', value=f'[{current_song[ctx.guild.id].uploader}]({current_song[ctx.guild.id].uploader_url})'.format(self))
-                 .add_field(name='URL', value=f'[YouTube]({current_song[ctx.guild.id].url})'.format(self))
-                 .set_thumbnail(url=current_song[ctx.guild.id].thumbnail))
-        return embed
+    # create song overview embed
+    def create_play_embed(self, ctx, song):
+        if song == None:
+            headline = '🎧  Now playing'
+            song = current_song[ctx.guild.id]
+        else:
+            headline = '🎧  Added to queue'
 
-    def create_enqueued_embed(self, ctx, song):
-        embed = (discord.Embed(title='🎧  Added to queue',
+        # prevent embed breaking when playing LIVE video
+        if song.duration == '':
+            duration = '/'
+        else:
+            duration = song.duration
+            
+        embed = (discord.Embed(title=headline,
                                description=f'{song.title}'.format(self),
                                color=discord.Color.blurple())
-                 .add_field(name='Duration', value=self.parse_duration(duration=song.duration))
+                 .add_field(name='Duration', value=self.parse_duration(duration))
                  .add_field(name='Channel', value=f'[{song.uploader}]({song.uploader_url})'.format(self))
                  .add_field(name='URL', value=f'[YouTube]({song.url})'.format(self))
                  .set_thumbnail(url=song.thumbnail))
@@ -483,6 +492,9 @@ class music(commands.Cog):
     # calculate durations for song/queue
     @staticmethod
     def parse_duration(duration):
+        if duration == '/':
+            return '/'
+        
         duration = int(duration)
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
@@ -503,6 +515,8 @@ class music(commands.Cog):
     def setup(client):
         client.add_cog(music(client))
 
+        
+# customize !help command
 class EmbedHelpCommand(commands.MinimalHelpCommand):
     async def send_pages(self):
         destination = self.get_destination()
@@ -511,13 +525,12 @@ class EmbedHelpCommand(commands.MinimalHelpCommand):
             e.description += page
         await destination.send(embed=e)
 
-cogs = [admin, general, music]
-
+        
 client = commands.Bot(command_prefix='!')
-# customize !help command
 client.help_command = EmbedHelpCommand(no_category='misc')
 
 # load cogs
+cogs = [admin, general, music]
 for i in range(len(cogs)):
     cogs[i].setup(client)
 
@@ -525,7 +538,6 @@ for i in range(len(cogs)):
 async def change_status():
     await client.change_presence(activity=discord.Game(name="Fortnite"))
 
-'''
 # send error messages
 @client.event
 async def on_command_error(ctx, error):
@@ -533,7 +545,6 @@ async def on_command_error(ctx, error):
         await ctx.send("❌ Huh? There is no such command (yet). Check commands via ``!help``.")
     else:
         await ctx.send(f"⚠️ {str(error)}")
-'''
 
 # auto-disconnect when alone in channel
 @client.event
@@ -563,7 +574,6 @@ async def on_guild_join(guild):
         await allgemein.send('🎧 **Hello {}!** My prefix is \'!\', use ``!help`` for more info :)'.format(guild.name))
     
     print(f'Joined the server {guild.name}.')
-
 
 # startup behavior
 @client.event

@@ -263,17 +263,17 @@ class general(commands.Cog):
     @commands.command(help='This command slaps someone!')
     async def slap(self, ctx, *, username=None):
         if username == None:
-            await ctx.send(f'{ctx.author.mention} slapped **{random.choice(ctx.guild.members)}**! (￣ε(#￣)☆╰o(￣▽￣/)')
+            await ctx.send(f'{ctx.author.mention} slapped **{random.choice(ctx.guild.members)}**! (￣ε(#￣)☆╰o(°□°/)')
         else:
             mentions_matches = ['<@!','>']
             if all(x in username for x in mentions_matches):
-                await ctx.send(f'{ctx.author.mention} slapped {username}! (￣ε(#￣)☆╰o(￣▽￣/)')
+                await ctx.send(f'{ctx.author.mention} slapped {username}! (￣ε(#￣)☆╰o(°□°/)')
             else:
                 member = ctx.guild.get_member_named(username)
                 if member != None:
-                    await ctx.send(f'{ctx.author.mention} slapped {member.mention}! (￣ε(#￣)☆╰o(￣▽￣/)')
+                    await ctx.send(f'{ctx.author.mention} slapped {member.mention}! (￣ε(#￣)☆╰o(°□°/)')
                 else:
-                    await ctx.send(f'{ctx.author.mention} slapped **{username}**! (￣ε(#￣)☆╰o(￣▽￣/)')
+                    await ctx.send(f'{ctx.author.mention} slapped **{username}**! (￣ε(#￣)☆╰o(°□°/)')
     
     def setup(client):
         client.add_cog(general(client))

@@ -205,18 +205,30 @@ class general(commands.Cog):
 
     @commands.command(help='This command hugs you or a named person <3')
     async def hug(self, ctx, username=None):
-        if username == None:
-            await ctx.send(f'{ctx.author.mention} (づ￣ ³￣)づ')
-        else:
-            mentions_matches = ['<@!','>']
-            if all(x in username for x in mentions_matches):
-                await ctx.send(f'{username} (づ￣ ³￣)づ')
-            else:
-                member = ctx.guild.get_member_named(username)
-                if member != None:
-                    await ctx.send(f'{member.mention} (づ￣ ³￣)づ')
+        hugs = [
+            'https://c.tenor.com/OXCV_qL-V60AAAAC/mochi-peachcat-mochi.gif',
+            'https://c.tenor.com/LadCBLn5HDQAAAAC/poke-hug.gif',
+            'https://c.tenor.com/8nEtM-3oQ1sAAAAC/hug-cats.gif',
+            'https://c.tenor.com/W-R9sPkk_IMAAAAC/come-here-hugs.gif',
+            'https://c.tenor.com/GTlDCm4P4EsAAAAd/kitty-kitten.gif',
+            'https://c.tenor.com/eAKshP8ZYWAAAAAC/cat-love.gif'
+        ]
+
+        embed = discord.Embed(
+            color=discord.Color.blurple()
+        ).set_image(url=random.choice(hugs))
+
+        async with ctx.channel.typing():
+            if username != None:
+                mentions_matches = ['<@!','>']
+                if all(x in username for x in mentions_matches):
+                    embed.description = f'{ctx.author.mention} hugs {username}!'
                 else:
-                    await ctx.send('(づ￣ ³￣)づ')
+                    member = ctx.guild.get_member_named(username)
+                    if member != None:
+                        embed.description = f'{ctx.author.mention} hugs {member.mention}!'
+            
+        await ctx.send(embed=embed)
 
     @commands.command(help='This command performs a random coinflip for you (german)', aliases=["flip", "coin"])
     async def coinflip(self, ctx):
@@ -239,41 +251,43 @@ class general(commands.Cog):
                 else:
                     await ctx.send(f'**{username}** hat gecoinflipped und **{random.choice(coinsides)}**')
 
-    @commands.command(help='This command performs a lol coinflip for you or somebody else (german)', aliases=["lolflip", "lolcoin"])
-    async def lolcoinflip(self, ctx, *, username=None):
-        coinsides = ['wird feeden 🙃', 'wird inten 😭', 'hat carry boots an!! 😮 🥾', 'ist sheesh drauf! 🤩', 'es ist GG 🤗', 'es ist ein ff angle 💀']
-        if username == None:
-            await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
-        else:
-            mentions_matches = ['<@!','>']
-            if all(x in username for x in mentions_matches):
-                await ctx.send(f'{username} hat gecoinflipped und **{random.choice(coinsides)}**')
-            else:
-                member = ctx.guild.get_member_named(username)
-                if member != None:
-                    await ctx.send(f'{member.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
-                else:
-                    await ctx.send(f'**{username}** hat gecoinflipped und **{random.choice(coinsides)}**')
-
     @commands.command(help='This command performs rock-paper-scissors for you (german)', aliases=["enemenemiste", "schnickschnackschnuck"])
     async def fliflaflu(self, ctx):
-        fliflaflu = ['Schere', 'Stein', 'Papier']
+        fliflaflu = ['✂️ Schere', '🪨 Stein', '🧻 Papier']
         await ctx.send(f'{ctx.author.mention} hat **{random.choice(fliflaflu)}** genommen!')
 
-    @commands.command(help='This command slaps someone!')
+    @commands.command(help='This command slaps someone!', aliases=['punch', 'hit'])
     async def slap(self, ctx, *, username=None):
-        if username == None:
-            await ctx.send(f'{ctx.author.mention} slapped **{random.choice(ctx.guild.members)}**! (￣ε(#￣)☆╰o(°□°/)')
-        else:
+        slaps = [
+            'https://c.tenor.com/_aIyKVBt8dUAAAAd/animated-couple.gif', 
+            'https://c.tenor.com/m14m8vGLFugAAAAd/asobi-asobase-anime.gif', 
+            'https://c.tenor.com/gIaioChTOloAAAAd/cat-cute.gif',
+            'https://c.tenor.com/x4RluZcWrWwAAAAd/slap.gif',
+            'https://c.tenor.com/aA5D_h_ej-QAAAAd/cute-slap.gif',
+            'https://c.tenor.com/mMGM1FfaXLgAAAAd/slap-cat.gif',
+            'https://c.tenor.com/Jpp7qo6lEHYAAAAd/mochi-cat.gif',
+            'https://c.tenor.com/oayQFdQOMRUAAAAd/slap-face.gif',
+            'https://c.tenor.com/HiOIMkcHywUAAAAd/tom-slaps-on-ass.gif',
+            'https://c.tenor.com/Q3CI345S0RsAAAAd/mochicat-slap.gif'
+        ]
+
+        embed = discord.Embed(
+            color=discord.Color.blurple()
+        ).set_image(url=random.choice(slaps))
+
+        if username != None:
             mentions_matches = ['<@!','>']
             if all(x in username for x in mentions_matches):
-                await ctx.send(f'{ctx.author.mention} slapped {username}! (￣ε(#￣)☆╰o(°□°/)')
+                embed.description = f'{ctx.author.mention} slapped {username}!'
             else:
                 member = ctx.guild.get_member_named(username)
                 if member != None:
-                    await ctx.send(f'{ctx.author.mention} slapped {member.mention}! (￣ε(#￣)☆╰o(°□°/)')
+                    embed.description = f'{ctx.author.mention} slapped {member.mention}!'
                 else:
-                    await ctx.send(f'{ctx.author.mention} slapped **{username}**! (￣ε(#￣)☆╰o(°□°/)')
+                    embed.description = f'{ctx.author.mention} slapped **{username}**!'
+
+        await ctx.send(embed=embed)
+
     
     def setup(client):
         client.add_cog(general(client))

@@ -5,6 +5,7 @@ import functools
 
 import discord
 from discord import embeds
+from discord import user
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
@@ -188,9 +189,6 @@ class general(commands.Cog):
                                .add_field(name='Owner', value='Kevin#4854'.format(self))
                                .add_field(name='Servers', value=f'{len(servers)}'.format(self))
                                .add_field(name='Library', value="discord.py")
-                               .add_field(name='Total memory', value=f'{total_memory: .2f} MB')
-                               .add_field(name='Memory Usage', value = f'{psutil.virtual_memory().percent}%')
-                               .add_field(name='CPU Usage', value = f'{psutil.cpu_percent()}%')
                                .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot'.format(self), inline=False))
         await ctx.send(embed=embed)
 
@@ -203,12 +201,80 @@ class general(commands.Cog):
         ]
 
         answer = random.choice(responses)
-        await ctx.send(f'**Question:** {question}\n**Answer:** {answer}')
+        await ctx.send(f'{question} **{answer}**')
 
-    @commands.command(help='This command hugs you <3')
-    async def hug(self, ctx):
-        await ctx.send('(づ￣ ³￣)づ')
+    @commands.command(help='This command hugs you or a named person <3')
+    async def hug(self, ctx, username=None):
+        if username == None:
+            await ctx.send(f'{ctx.author.mention} (づ￣ ³￣)づ')
+        else:
+            mentions_matches = ['<@!','>']
+            if all(x in username for x in mentions_matches):
+                await ctx.send(f'{username} (づ￣ ³￣)づ')
+            else:
+                member = ctx.guild.get_member_named(username)
+                if member != None:
+                    await ctx.send(f'{member.mention} (づ￣ ³￣)づ')
+                else:
+                    await ctx.send('(づ￣ ³￣)づ')
 
+    @commands.command(help='This command performs a random coinflip for you (german)', aliases=["flip", "coin"])
+    async def coinflip(self, ctx):
+        coinsides = ['Kopf', 'Zahl']
+        await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{random.choice(coinsides)}** bekommen! ಠ‿ಠ')
+
+    @commands.command(help='This command performs a lol coinflip for you or somebody else (german)', aliases=["lolflip", "lolcoin"])
+    async def lolcoinflip(self, ctx, *, username=None):
+        coinsides = ['wird feeden 🙃', 'wird inten 😭', 'hat carry boots an!! 😮 🥾', 'ist sheesh drauf! 🤩', 'es ist GG 🤗', 'es ist ein ff angle 💀']
+        if username == None:
+            await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
+        else:
+            mentions_matches = ['<@!','>']
+            if all(x in username for x in mentions_matches):
+                await ctx.send(f'{username} hat gecoinflipped und **{random.choice(coinsides)}**')
+            else:
+                member = ctx.guild.get_member_named(username)
+                if member != None:
+                    await ctx.send(f'{member.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
+                else:
+                    await ctx.send(f'**{username}** hat gecoinflipped und **{random.choice(coinsides)}**')
+
+    @commands.command(help='This command performs a lol coinflip for you or somebody else (german)', aliases=["lolflip", "lolcoin"])
+    async def lolcoinflip(self, ctx, *, username=None):
+        coinsides = ['wird feeden 🙃', 'wird inten 😭', 'hat carry boots an!! 😮 🥾', 'ist sheesh drauf! 🤩', 'es ist GG 🤗', 'es ist ein ff angle 💀']
+        if username == None:
+            await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
+        else:
+            mentions_matches = ['<@!','>']
+            if all(x in username for x in mentions_matches):
+                await ctx.send(f'{username} hat gecoinflipped und **{random.choice(coinsides)}**')
+            else:
+                member = ctx.guild.get_member_named(username)
+                if member != None:
+                    await ctx.send(f'{member.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
+                else:
+                    await ctx.send(f'**{username}** hat gecoinflipped und **{random.choice(coinsides)}**')
+
+    @commands.command(help='This command performs rock-paper-scissors for you (german)', aliases=["enemenemiste", "schnickschnackschnuck"])
+    async def fliflaflu(self, ctx):
+        fliflaflu = ['Schere', 'Stein', 'Papier']
+        await ctx.send(f'{ctx.author.mention} hat **{random.choice(fliflaflu)}** genommen!')
+
+    @commands.command(help='This command slaps someone!')
+    async def slap(self, ctx, *, username=None):
+        if username == None:
+            await ctx.send(f'{ctx.author.mention} slapped **{random.choice(ctx.guild.members)}**! (￣ε(#￣)☆╰o(￣▽￣/)')
+        else:
+            mentions_matches = ['<@!','>']
+            if all(x in username for x in mentions_matches):
+                await ctx.send(f'{ctx.author.mention} slapped {username}! (￣ε(#￣)☆╰o(￣▽￣/)')
+            else:
+                member = ctx.guild.get_member_named(username)
+                if member != None:
+                    await ctx.send(f'{ctx.author.mention} slapped {member.mention}! (￣ε(#￣)☆╰o(￣▽￣/)')
+                else:
+                    await ctx.send(f'{ctx.author.mention} slapped **{username}**! (￣ε(#￣)☆╰o(￣▽￣/)')
+    
     def setup(client):
         client.add_cog(general(client))
 

@@ -17,6 +17,8 @@ import threading
 import concurrent.futures
 import time
 
+import psutil
+
 # get bot credentials
 load_dotenv()
 bot_token = os.getenv("BOT_TOKEN")
@@ -105,6 +107,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             # second extraction: actual audio processing + retrieval of other keys (thumbnail, duration etc.)
             partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)
             data = await loop.run_in_executor(executor, partial)
+            # TODO: case playlist: throws Errno 11: Resource temporarily not available after ~29th song
             # print(f'{threading.active_count()} Threads active.')
 
             if data is None:
@@ -164,21 +167,47 @@ class general(commands.Cog):
     async def ping(self, ctx):
         await ctx.send(f'**Pong:** {round(client.latency * 1000)} ms')
 
-    @commands.command(help='This command says hi to the user')
+    @commands.command(help='This command says hi to the user', aliases=['hi', 'hey'])
     async def hello(self, ctx):
-        await ctx.send(f'Moin {ctx.message.author.name}.')
+        hellos = [
+            'Hewo °‿‿°', 'Moin', 'Heyy ( ˘ ³˘)♥'
+        ]
+
+        hello = random.choice(hellos)
+        await ctx.send(f'{hello} {ctx.message.author.mention}')
     
-    @commands.command(help='This command informs the user about the bot')
+    @commands.command(help='This command informs the user about the bot', aliases=['info', 'stats'])
     async def about(self, ctx):
         servers = client.guilds
 
+        total_memory = psutil.virtual_memory().total / 1024**2
+
         embed = (discord.Embed(title='🎧  About me',
-                               description='Hey, I\'m Kevin\'s music bot written in Python and hosted 24/7 on Heroku.',
+                               description='Hey, I\'m Kevin\'s music bot, hosted 24/7 on Heroku.',
                                color=discord.Color.blurple())
                                .add_field(name='Owner', value='Kevin#4854'.format(self))
                                .add_field(name='Servers', value=f'{len(servers)}'.format(self))
+                               .add_field(name='Library', value="discord.py")
+                               .add_field(name='Total memory', value=f'{total_memory: .2f} MB')
+                               .add_field(name='Memory Usage', value = f'{psutil.virtual_memory().percent}%')
+                               .add_field(name='CPU Usage', value = f'{psutil.cpu_percent()}%')
                                .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot'.format(self), inline=False))
         await ctx.send(embed=embed)
+
+    @commands.command(help='This command answers your question with yes or no')
+    async def decide(self, ctx, *, question: commands.clean_content):
+        responses = [
+            'Yes ʘ‿ʘ', 'No ಠ_ಠ', 'Sure (｡◕‿◕｡)', 'Without a doubt, yes ♥‿♥', 'Yeh, oke ( ˇ෴ˇ )',
+            'no... (╯°□°）╯︵ ┻━┻', 'no... baka 눈_눈',
+            "senpai, pls no ;-;", 'Nah ⊙﹏⊙', 'Yas!!'
+        ]
+
+        answer = random.choice(responses)
+        await ctx.send(f'**Question:** {question}\n**Answer:** {answer}')
+
+    @commands.command(help='This command hugs you <3')
+    async def hug(self, ctx):
+        await ctx.send('(づ￣ ³￣)づ')
 
     def setup(client):
         client.add_cog(general(client))

@@ -6,6 +6,7 @@
 * View songs in queue and remove specific songs
 * Multi-server usage support
 * Youtube playlist support (limited to playlists with ~ 20 songs due to bandwidth reasons)
+* Supports various fun/useful commands
 
 ## Local Host:
 ### Requirements:
@@ -26,7 +27,7 @@
 
 ### Usage:
 * Connect the Git-Repository to Heroku under Deploy on the Heroku Dashboard
-* Add your bot-token (as BOT_TOKEN) and bot-id (as BOT_ID) as config vars to Heroku under Settings
+* Add your bot-token (as BOT_TOKEN), bot-id (as BOT_ID) and tenor-token (as TENOR_TOKEN) as config vars to Heroku under Settings
 * Deploy the bot under Deploy (not needed if automatic deploys are enabled)
 * Add your bot to your server with the link provided in the Discord Developer Portal
 * Turn on your Dyno Worker under Resources

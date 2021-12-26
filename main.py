@@ -329,7 +329,7 @@ class general(commands.Cog):
         else:
             member = ctx.guild.get_member_named(username)
             if member != None:
-                username = f'{member.mention}!'
+                username = f'{member.mention}'
             else:
                 username = f'{username}'
 
@@ -338,8 +338,6 @@ class general(commands.Cog):
             description=f'**Person:** {username}\n**Type:** {dere_type}\n\n{dere_info}',
             color=discord.Color.blurple()
         )
-
-        
 
         await ctx.send(embed=embed)
 

@@ -1,3 +1,7 @@
+'''
+Music cog, contains commands controlling music playback from YouTube
+'''
+
 import asyncio
 import functools
 

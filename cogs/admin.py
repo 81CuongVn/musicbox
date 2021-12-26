@@ -1,3 +1,7 @@
+'''
+Admin cog, contains commands designed purely for the owner
+'''
+
 import os
 
 import discord

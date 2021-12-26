@@ -1,3 +1,7 @@
+'''
+General cog, contains mostly fun and/or useful commands
+'''
+
 import os
 
 import random

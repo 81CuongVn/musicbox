@@ -1,9 +1,14 @@
+'''
+Main file for this music bot
+* starts the bot
+* loads cogs on startup
+* key functionality is defined under ./cogs
+'''
+
 import os
 
 import discord
-from discord import embeds
-from discord import user
-from discord.ext import commands, tasks
+from discord.ext import commands
 from dotenv import load_dotenv
 
 import platform
@@ -37,6 +42,7 @@ for file in os.listdir('./cogs'):
                 print(f'Failed to load cog {extension}!\n{exception}')
 print('-------------------')
 
+# set status
 @client.event
 async def change_status():
     await client.change_presence(activity=discord.Game(name="Fortnite"))
@@ -71,5 +77,5 @@ async def on_ready():
     print('-------------------')
     await change_status()
 
-
+# start the bot
 client.run(bot_token)

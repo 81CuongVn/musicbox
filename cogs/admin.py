@@ -1,0 +1,37 @@
+import os
+
+import discord
+from discord.ext import commands
+from dotenv import load_dotenv
+
+# get bot id
+load_dotenv()
+bot_id = os.getenv("BOT_ID")
+
+class admin(commands.Cog, name='admin'):
+    def __init__(self, client):
+        self.client = client
+    
+    @commands.command(hidden=True, help='Shuts down the bot completely.')
+    @commands.is_owner()
+    async def shutdown(self, ctx):
+        await ctx.message.add_reaction('💤')
+        await self.client.close()
+
+    @commands.command(hidden=True, help='Returns an invite link of the bot to a server.')
+    @commands.is_owner()
+    async def invite(self, ctx):
+        embed = (discord.Embed( title='🎧 Invite Link', 
+                                description='https://discordapp.com/oauth2/authorize?client_id={}&permissions=8&scope=bot'.format(bot_id), 
+                                color=discord.Color.blurple()))
+        await ctx.send(embed=embed)
+
+    @commands.command(hidden=True, help='Gets all servers the bot is currently in.')
+    @commands.is_owner()
+    async def servers(self, ctx):
+        servers = await self.client.fetch_guilds().flatten()
+        await ctx.send(f'Servers: {[server.name for server in servers]}')
+
+
+def setup(client):
+    client.add_cog(admin(client))

@@ -18,11 +18,14 @@ import threading
 import concurrent.futures
 import time
 
-import psutil
+import requests
+import json
+
 
 # get bot credentials
 load_dotenv()
 bot_token = os.getenv("BOT_TOKEN")
+tenor_token = os.getenv("TENOR_TOKEN")
 bot_id = os.getenv("BOT_ID")
 
 # ignore unnecessary bug reports
@@ -161,10 +164,13 @@ class admin(commands.Cog):
 
         
 class general(commands.Cog):
+    # improve random generator
+    sys_random = random.SystemRandom()
+
     def __init__(self, client):
             self.client = client
 
-    @commands.command(help='This command returns the current latency of the bot')
+    @commands.command(help='This command returns the current latency of the bot.')
     async def ping(self, ctx):
         await ctx.send(f'**Pong:** {round(client.latency * 1000)} ms')
 
@@ -174,14 +180,12 @@ class general(commands.Cog):
             'Hewo °‿‿°', 'Moin', 'Heyy ( ˘ ³˘)♥'
         ]
 
-        hello = random.choice(hellos)
+        hello = self.sys_random.choice(hellos)
         await ctx.send(f'{hello} {ctx.message.author.mention}')
     
-    @commands.command(help='This command informs the user about the bot', aliases=['info', 'stats'])
+    @commands.command(help='This command informs the user about the bot.', aliases=['info', 'stats'])
     async def about(self, ctx):
-        servers = client.guilds
-
-        total_memory = psutil.virtual_memory().total / 1024**2
+        servers = self.client.guilds
 
         embed = (discord.Embed(title='🎧  About me',
                                description='Hey, I\'m Kevin\'s music bot, hosted 24/7 on Heroku.',
@@ -192,7 +196,7 @@ class general(commands.Cog):
                                .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot'.format(self), inline=False))
         await ctx.send(embed=embed)
 
-    @commands.command(help='This command answers your question with yes or no')
+    @commands.command(help='This command answers your question with yes or no.')
     async def decide(self, ctx, *, question: commands.clean_content):
         responses = [
             'Yes ʘ‿ʘ', 'No ಠ_ಠ', 'Sure (｡◕‿◕｡)', 'Without a doubt, yes ♥‿♥', 'Yeh, oke ( ˇ෴ˇ )',
@@ -200,8 +204,8 @@ class general(commands.Cog):
             "senpai, pls no ;-;", 'Nah ⊙﹏⊙', 'Yas!!'
         ]
 
-        answer = random.choice(responses)
-        await ctx.send(f'{question} **{answer}**')
+        answer = self.sys_random.choice(responses)
+        await ctx.send(f'**{answer}**')
 
     @commands.command(help='This command hugs you or a named person <3')
     async def hug(self, ctx, username=None):
@@ -216,7 +220,7 @@ class general(commands.Cog):
 
         embed = discord.Embed(
             color=discord.Color.blurple()
-        ).set_image(url=random.choice(hugs))
+        ).set_image(url=self.sys_random.choice(hugs))
 
         async with ctx.channel.typing():
             if username != None:
@@ -230,31 +234,31 @@ class general(commands.Cog):
             
         await ctx.send(embed=embed)
 
-    @commands.command(help='This command performs a random coinflip for you (german)', aliases=["flip", "coin"])
+    @commands.command(help='This command performs a random coinflip for you (german).', aliases=["flip", "coin"])
     async def coinflip(self, ctx):
         coinsides = ['Kopf', 'Zahl']
-        await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{random.choice(coinsides)}** bekommen! ಠ‿ಠ')
+        await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{self.sys_random.choice(coinsides)}** bekommen! ಠ‿ಠ')
 
-    @commands.command(help='This command performs a lol coinflip for you or somebody else (german)', aliases=["lolflip", "lolcoin"])
+    @commands.command(help='This command performs a lol coinflip for you or somebody else (german).', aliases=["lolflip", "lolcoin"])
     async def lolcoinflip(self, ctx, *, username=None):
         coinsides = ['wird feeden 🙃', 'wird inten 😭', 'hat carry boots an!! 😮 🥾', 'ist sheesh drauf! 🤩', 'es ist GG 🤗', 'es ist ein ff angle 💀']
         if username == None:
-            await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
+            await ctx.send(f'{ctx.author.mention} hat gecoinflipped und **{self.sys_random.choice(coinsides)}**')
         else:
             mentions_matches = ['<@!','>']
             if all(x in username for x in mentions_matches):
-                await ctx.send(f'{username} hat gecoinflipped und **{random.choice(coinsides)}**')
+                await ctx.send(f'{username} hat gecoinflipped und **{self.sys_random.choice(coinsides)}**')
             else:
                 member = ctx.guild.get_member_named(username)
                 if member != None:
-                    await ctx.send(f'{member.mention} hat gecoinflipped und **{random.choice(coinsides)}**')
+                    await ctx.send(f'{member.mention} hat gecoinflipped und **{self.sys_random.choice(coinsides)}**')
                 else:
-                    await ctx.send(f'**{username}** hat gecoinflipped und **{random.choice(coinsides)}**')
+                    await ctx.send(f'**{username}** hat gecoinflipped und **{self.sys_random.choice(coinsides)}**')
 
-    @commands.command(help='This command performs rock-paper-scissors for you (german)', aliases=["enemenemiste", "schnickschnackschnuck"])
+    @commands.command(help='This command performs rock-paper-scissors for you (german).', aliases=["enemenemiste", "schnickschnackschnuck"])
     async def fliflaflu(self, ctx):
         fliflaflu = ['✂️ Schere', '🪨 Stein', '🧻 Papier']
-        await ctx.send(f'{ctx.author.mention} hat **{random.choice(fliflaflu)}** genommen!')
+        await ctx.send(f'{ctx.author.mention} hat **{self.sys_random.choice(fliflaflu)}** genommen!')
 
     @commands.command(help='This command slaps someone!', aliases=['punch', 'hit'])
     async def slap(self, ctx, *, username=None):
@@ -270,10 +274,11 @@ class general(commands.Cog):
             'https://c.tenor.com/HiOIMkcHywUAAAAd/tom-slaps-on-ass.gif',
             'https://c.tenor.com/Q3CI345S0RsAAAAd/mochicat-slap.gif'
         ]
+        slap_gif = self.get_random_gif('hit')
 
         embed = discord.Embed(
             color=discord.Color.blurple()
-        ).set_image(url=random.choice(slaps))
+        ).set_image(url=slap_gif)
 
         if username != None:
             mentions_matches = ['<@!','>']
@@ -288,6 +293,32 @@ class general(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @commands.command(help='This command selects an option from a list of options for you.', aliases=["select", "choice"])
+    async def roulette(self, ctx, *, options):
+        parsed_list = list(options.split(" "))
+        list_to_string = ', '.join(parsed_list)
+
+        embed = (discord.Embed(title='🎲  Roulette',
+                               color=discord.Color.blurple())
+                               .add_field(name='Options', value=f'{list_to_string}'.format(self), inline=False)
+                               .add_field(name='Selected', value=f'{self.sys_random.choice(parsed_list)}'.format(self), inline=False))
+
+        await ctx.send(embed=embed)
+
+    @commands.command(help='This command sends a tenor gif according to your search keyword.')
+    async def gif(self, ctx, *, search):
+        embed = discord.Embed(
+            color=discord.Color.blurple()
+        ).set_image(url=self.get_random_gif(search))
+
+        await ctx.send(embed=embed)
+
+    def get_random_gif(self, searchTerm):
+        response = requests.get('https://g.tenor.com/v1/search?q={}&key={}&limit=50'.format(searchTerm, tenor_token))
+        data = response.json()
+        
+        gif = self.sys_random.choice(data['results'])
+        return gif['media'][0]['gif']['url']
     
     def setup(client):
         client.add_cog(general(client))

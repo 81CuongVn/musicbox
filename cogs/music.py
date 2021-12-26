@@ -73,7 +73,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(executor, partial)
 
         if data is None:
-            raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+            raise YTDLError(f'Couldn\'t find anything that matches `{search}`')
 
         playlist_detected = False
         if 'entries' not in data:
@@ -86,7 +86,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             process_info = [entry for entry in data['entries']]
 
             if not process_info:
-                raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+                raise YTDLError(f'Couldn\'t find anything that matches `{search}`')
 
         sources = []
         for entry in process_info:
@@ -103,7 +103,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
             # print(f'{threading.active_count()} Threads active.')
 
             if data is None:
-                raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
+                raise YTDLError(f'Couldn\'t fetch `{webpage_url}`')
 
             if 'entries' not in data:
                 info = data
@@ -113,7 +113,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     try:
                         info = data['entries'].pop(0)
                     except IndexError:
-                        raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
+                        raise YTDLError(f'Couldn\'t retrieve any matches for `{webpage_url}`')
 
             # add user + channel info to dict
             info['requester'] = ctx.author
@@ -307,7 +307,7 @@ class music(commands.Cog):
 
             try:
                 embed = (discord.Embed(title='🎧  Current Queue',
-                                    description='\n'.join(enum_titles).format(self),
+                                    description='\n'.join(enum_titles),
                                     color=discord.Color.blurple())
                                     .add_field(name='Total time', value=self.parse_duration(duration=total_duration))
                                     )
@@ -315,7 +315,7 @@ class music(commands.Cog):
             except:
                 await ctx.send('❌ Too many songs to display!')
                 embed = (discord.Embed(title='🎧  Current Queue',
-                                    description=f'{len(titles)} songs enqueued.'.format(self),
+                                    description=f'{len(titles)} songs enqueued.',
                                     color=discord.Color.blurple())
                                     .add_field(name='Total time', value=self.parse_duration(duration=total_duration))
                                     )
@@ -364,7 +364,7 @@ class music(commands.Cog):
                         await ctx.send(f'🎧 **Enqueued:** {len(sources)} songs')
                     await ctx.send(embed=self.create_play_embed(ctx=ctx, song=None))
                 except YTDLError as e:
-                    await ctx.send('⚠️ An error occurred while processing this request: {}'.format(str(e)))
+                    await ctx.send(f'⚠️ An error occurred while processing this request: {str(e)}')
             else:
                 if len(sources) > 1:
                     await ctx.send(f'🎧 **Enqueued:** {len(sources)} songs')
@@ -385,7 +385,7 @@ class music(commands.Cog):
                     current_song[ctx.guild.id] = repeated_song[0]
                     ctx.voice_client.play(current_song[ctx.guild.id], after=lambda e: print('Player error: %s' % e) if e else asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.client.loop))
             except YTDLError as e:
-                await ctx.send('⚠️ An error occurred while processing this request: {}'.format(str(e)))
+                await ctx.send(f'⚠️ An error occurred while processing this request: {str(e)}')
         else:
             # inactivity disconnect after 3 minutes
             await asyncio.sleep(210)
@@ -412,13 +412,13 @@ class music(commands.Cog):
             duration = song.duration
 
         embed = (discord.Embed(title=headline,
-                               description=f'{song.title}'.format(self),
+                               description=f'{song.title}',
                                color=discord.Color.blurple())
                  .add_field(name='Duration', value=self.parse_duration(duration))
-                 .add_field(name='Channel', value=f'[{song.uploader}]({song.uploader_url})'.format(self))
-                 .add_field(name='URL', value=f'[YouTube]({song.url})'.format(self))
+                 .add_field(name='Channel', value=f'[{song.uploader}]({song.uploader_url})')
+                 .add_field(name='URL', value=f'[YouTube]({song.url})')
                  .set_thumbnail(url=song.thumbnail)
-                 .set_footer(text='Requested by {}'.format(song.requester), icon_url=song.requester.avatar_url))
+                 .set_footer(text=f'Requested by {song.requester}', icon_url=song.requester.avatar_url))
         return embed
 
     # check voice_states of member and bot
@@ -448,13 +448,13 @@ class music(commands.Cog):
 
         duration = []
         if days > 0:
-            duration.append('{} days'.format(days))
+            duration.append(f'{days} days')
         if hours > 0:
-            duration.append('{} hours'.format(hours))
+            duration.append(f'{hours} hours')
         if minutes > 0:
-            duration.append('{} minutes'.format(minutes))
+            duration.append(f'{minutes} minutes')
         if seconds > 0:
-            duration.append('{} seconds'.format(seconds))
+            duration.append(f'{seconds} seconds')
 
         return ', '.join(duration)
 

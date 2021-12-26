@@ -51,7 +51,7 @@ async def change_status():
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CommandNotFound):
-        await ctx.send("❌ Huh? There is no such command (yet). Check commands via ``!help``.")
+        await ctx.send('❌ Huh? There is no such command (yet). Check commands via ``!help``.')
     else:
         await ctx.send(f"⚠️ {str(error)}")
 
@@ -62,9 +62,9 @@ async def on_guild_join(guild):
     allgemein = discord.utils.find(lambda x: x.name == 'allgemein',  guild.text_channels)
 
     if general and general.permissions_for(guild.me).send_messages:
-        await general.send('🎧 **Hello {}!** My prefix is \'!\', use ``!help`` for more info :)'.format(guild.name))
+        await general.send(f'🎧 **Hello {guild.name}!** My prefix is \'!\', use ``!help`` for more info :)')
     elif allgemein and allgemein.permissions_for(guild.me).send_messages:
-        await allgemein.send('🎧 **Hello {}!** My prefix is \'!\', use ``!help`` for more info :)'.format(guild.name))
+        await allgemein.send(f'🎧 **Hello {guild.name}!** My prefix is \'!\', use ``!help`` for more info :)')
     
     print(f'Joined the server {guild.name}.')
 

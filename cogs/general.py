@@ -41,10 +41,10 @@ class general(commands.Cog, name='general'):
         embed = (discord.Embed(title='🎧  About me',
                                description='Hey, I\'m Kevin\'s music bot, hosted 24/7 on Heroku.',
                                color=discord.Color.blurple())
-                               .add_field(name='Owner', value='Kevin#4854'.format(self))
-                               .add_field(name='Servers', value=f'{len(servers)}'.format(self))
+                               .add_field(name='Owner', value='Kevin#4854')
+                               .add_field(name='Servers', value=f'{len(servers)}')
                                .add_field(name='Library', value="discord.py")
-                               .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot'.format(self), inline=False))
+                               .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot', inline=False))
         await ctx.send(embed=embed)
 
     @commands.command(help='This command answers your question with yes or no.')
@@ -151,8 +151,8 @@ class general(commands.Cog, name='general'):
 
         embed = (discord.Embed(title='🎲  Roulette',
                                color=discord.Color.blurple())
-                               .add_field(name='Options', value=f'{list_to_string}'.format(self), inline=False)
-                               .add_field(name='Selected', value=f'{self.sys_random.choice(parsed_list)}'.format(self), inline=False))
+                               .add_field(name='Options', value=f'{list_to_string}', inline=False)
+                               .add_field(name='Selected', value=f'{self.sys_random.choice(parsed_list)}', inline=False))
 
         await ctx.send(embed=embed)
 
@@ -201,7 +201,7 @@ class general(commands.Cog, name='general'):
         await ctx.send(embed=embed)
 
     def get_random_gif(self, searchTerm):
-        response = requests.get('https://g.tenor.com/v1/search?q={}&key={}&limit=50'.format(searchTerm, tenor_token))
+        response = requests.get(f'https://g.tenor.com/v1/search?q={searchTerm}&key={tenor_token}&limit=50')
         data = response.json()
         
         gif = self.sys_random.choice(data['results'])

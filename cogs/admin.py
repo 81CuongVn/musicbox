@@ -34,7 +34,8 @@ class admin(commands.Cog, name='admin'):
     @commands.is_owner()
     async def servers(self, ctx):
         servers = await self.client.fetch_guilds().flatten()
-        await ctx.send(f'Servers: {[server.name for server in servers]}')
+        servers_to_string = ', '.join([server.name for server in servers])
+        await ctx.send(f'Servers: {servers_to_string}')
 
 
 def setup(client):

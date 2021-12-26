@@ -43,7 +43,7 @@ class general(commands.Cog, name='general'):
                                color=discord.Color.blurple())
                                .add_field(name='Owner', value='Kevin#4854')
                                .add_field(name='Servers', value=f'{len(servers)}')
-                               .add_field(name='Library', value="discord.py")
+                               .add_field(name='Library', value='discord.py')
                                .add_field(name='GitHub', value=f'https://github.com/kvinsu/discord_musicbot', inline=False))
         await ctx.send(embed=embed)
 
@@ -52,7 +52,7 @@ class general(commands.Cog, name='general'):
         responses = [
             'Yes ʘ‿ʘ', 'No ಠ_ಠ', 'Sure (｡◕‿◕｡)', 'Without a doubt, yes ♥‿♥', 'Yeh, oke ( ˇ෴ˇ )',
             'no... (╯°□°）╯︵ ┻━┻', 'no... baka 눈_눈',
-            "senpai, pls no ;-;", 'Nah ⊙_⊙', 'Yas!!'
+            'senpai, pls no ;-;', 'Nah ⊙_⊙', 'Yas!!'
         ]
 
         answer = self.sys_random.choice(responses)

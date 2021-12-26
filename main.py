@@ -305,6 +305,44 @@ class general(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @commands.command(help='This command determines a dere-type for someone!')
+    async def dere(self, ctx, *, username):
+        dere_types = {
+            'bakadere': 'is very clumsy and stupid | more often than not, they lack common sense',
+            'dandere': 'quiet, silent and asocial | come across as emotionless at times | will suddenly become talkative, sweet, and cute when alone with the right person | actually just shy',
+            'darudere': 'often very lazy and dull | will usually ignore others and do whatever they want unless someone they care about asks them to do something or needs their help',
+            'deredere': 'very sweet and energetic | usually cheerful and happy | tend to spread joyfulness to others',
+            'hinedere': 'has cynical world views | cold-hearted | highly arrogant | has a soft side deep down that may reveal itself once their love interest breaks through',
+            'hiyakasudere': 'likes to tease and flirt | sarcastic, mischievous, or at least playful',
+            'kamidere': 'feels superior compared to others | highly arrogant, overconfident and proud | aren’t afraid to speak their minds and show everyone how right they are | stubborn | narcissistic',
+            'kanedere': 'attracted to others with money or status | gold digger',
+            'kuudere': 'calm and collected on the outside | never panics | shows little emotion | tends to be a leader | often cold, blunt, and cynical | very caring on the inside, at least when it comes to the ones they love',
+            'tsundere': 'usually stern, cold or hostile to the person they like and even others | occasionally showing the warm, loving feelings hidden inside | shy, nervous, insecure | can\'t help acting badly in front of their crush',
+            'undere': 'says yes to pretty much everything the one they love says | easily manipulated'
+        }
+
+        dere_type, dere_info = self.sys_random.choice(list(dere_types.items()))
+
+        mentions_matches = ['<@!','>']
+        if all(x in username for x in mentions_matches):
+            username = f'{username}'
+        else:
+            member = ctx.guild.get_member_named(username)
+            if member != None:
+                username = f'{member.mention}!'
+            else:
+                username = f'{username}'
+
+        embed = discord.Embed(
+            title='💞  Dere-type Generator',
+            description=f'**Person:** {username}\n**Type:** {dere_type}\n\n{dere_info}',
+            color=discord.Color.blurple()
+        )
+
+        
+
+        await ctx.send(embed=embed)
+
     @commands.command(help='This command sends a tenor gif according to your search keyword.')
     async def gif(self, ctx, *, search):
         embed = discord.Embed(

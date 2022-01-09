@@ -34,4 +34,5 @@
 * For 24/7 host: Add your credit card to increase dyno hours for free
 
 ## Future Milestones:
-* support for spotify links
+* support for longer youtube playlists
+* support for spotify links/playlists

@@ -205,7 +205,7 @@ class music(commands.Cog):
             voice.resume()
             await ctx.message.add_reaction('▶️')
 
-    @commands.command(help='This command sets the repeat mode of the player')
+    @commands.command(help='This command sets the repeat mode of the player',aliases=['loop'])
     async def repeat(self, ctx):
         global repeating
 

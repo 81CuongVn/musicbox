@@ -45,7 +45,7 @@ print('-------------------')
 # set status
 @client.event
 async def change_status():
-    await client.change_presence(activity=discord.Game(name="Fortnite"))
+    await client.change_presence(activity=discord.Game(name="!help"))
 
 # send error messages
 @client.event

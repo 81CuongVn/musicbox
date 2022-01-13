@@ -1,4 +1,5 @@
-# MusicBox - A Simple Discord Music Bot
+# MusicBox
+* A simple youtube music bot for discord
 
 ## Key Features:
 * Ability to play songs from youtube urls or search keywords

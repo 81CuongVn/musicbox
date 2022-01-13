@@ -65,7 +65,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def create_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
         loop = loop or asyncio.get_event_loop()
 
-        # prevents this method from opening to many stale threads (especially when playing playlists)
+        # prevents this method from opening too many stale threads (especially when playing playlists)
         executor = concurrent.futures.ThreadPoolExecutor(3)
 
         # first extraction: determine song type

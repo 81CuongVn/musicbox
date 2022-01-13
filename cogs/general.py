@@ -21,6 +21,10 @@ class general(commands.Cog, name='general'):
     def __init__(self, client):
             self.client = client
 
+    @commands.command(hidden=True, aliases=['commandlist', 'commands'])
+    async def _help(self, ctx):
+        await ctx.send_help()
+
     @commands.command(help='This command returns the current latency of the bot.')
     async def ping(self, ctx):
         await ctx.send(f'**Pong:** {round(self.client.latency * 1000)} ms')

@@ -16,7 +16,7 @@ class admin(commands.Cog, name='admin'):
     def __init__(self, client):
         self.client = client
     
-    @commands.command(hidden=True, help='Shuts down the bot completely.')
+    @commands.command(hidden=True, help='Shuts down the bot completely.', aliases=['s', 'sleep'])
     @commands.is_owner()
     async def shutdown(self, ctx):
         await ctx.message.add_reaction('💤')

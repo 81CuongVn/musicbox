@@ -27,7 +27,7 @@ class EmbedHelpCommand(commands.MinimalHelpCommand):
         await destination.send(embed=e)
 
 client = commands.Bot(command_prefix='!')
-client.help_command = EmbedHelpCommand(no_category='misc')
+client.help_command = EmbedHelpCommand(no_category='misc', aliases=['commands'])
 
 # load cogs
 print('-------------------')

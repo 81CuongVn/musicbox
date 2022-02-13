@@ -1,3 +1,4 @@
+![My project2](https://user-images.githubusercontent.com/28533473/153753522-281bd97a-81c0-4df7-8b39-7b063b83390b.png)
 # MusicBox
 * A simple youtube music bot for discord
 

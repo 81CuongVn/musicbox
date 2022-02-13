@@ -1,4 +1,4 @@
-![ReadMeHeader](https://user-images.githubusercontent.com/28533473/153753522-281bd97a-81c0-4df7-8b39-7b063b83390b.png)
+![ReadMeHeader](https://user-images.githubusercontent.com/28533473/153753726-e0133b1c-7274-4856-9f70-2ed5408a9417.jpg)
 # MusicBox
 * A simple youtube music bot for discord
 
